@@ -1,0 +1,15 @@
+
+                       File Format Description Library
+                      .................................
+
+
+Transforms binary data into a tree (and vice versa):
+  - tree = File2Tree ("description", data)
+  - data = Tree2File (tree)
+
+
+Some of the details are at  "formal_description"; all of them are at the code.
+
+
+This library is different: it does not do its own string and stream - you do.
+Details at "ffd_model.h".

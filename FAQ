@@ -1,0 +1,9 @@
+q: Why not XML?
+a: Do the XML - create the better library.
+
+q: Why "const byte * buf, int len"?
+a: Because the FFD are intended to be short and simple; because a streaming
+   parser brings nothing but more code to the table.
+
+q: Why not hard-linked to the windlib (an implicit gear at my "h3r" project)?
+a: Because enforcing you using my List<T> instead of yours, is wrong.
