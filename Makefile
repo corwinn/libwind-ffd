@@ -33,6 +33,7 @@
 # **** END LICENCE BLOCK ****/
 
 MAKEFLAGS += rR
+MODEL ?= stl
 
 APP = libwind-ffd.so
 CC ?= clang
@@ -41,9 +42,10 @@ _W  = -Wall -Wextra -Wshadow
 _O  = -O0 -g -DFFD_DEBUG -fno-exceptions -fno-threadsafe-statics -gdwarf-4
 _F = -fsanitize=address,undefined,integer,leak -fvisibility=hidden
 #_F = -fvisibility=hidden
-_I  = -I.
+_I  = -I. -I$(MODEL)
 CXXFLAGS = $(_I) -std=c++14 -fPIC $(_O) $(_F) $(_W)
 SRC = $(wildcard *.cpp)
+SRC := $(filter-out test.cpp,$(SRC))
 OBJ = $(patsubst %.cpp,%.o,$(SRC))
 
 $(APP): $(OBJ)
