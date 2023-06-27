@@ -64,11 +64,11 @@ struct UnqueuedThreadSafeDebugLog final
     inline L & operator<<(L & l) { return l; }
 
     bool Enabled {true};
-    static UnqueuedThreadSafeDebugLog & D();
+    FFD_EXPORT static UnqueuedThreadSafeDebugLog & D();
 };
 
 NAMESPACE_FFD
 
-#define Dbg (UnqueuedThreadSafeDebugLog::D ())
+#define Dbg (::FFD_NS::UnqueuedThreadSafeDebugLog::D ())
 
 #endif
