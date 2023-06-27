@@ -52,10 +52,11 @@ using byte = unsigned char;
 #define FFD_NS FFD
 #define FFD_NAMESPACE namespace FFD {
 #define NAMESPACE_FFD }
+#define FFD_EXPORT __attribute__((visibility("default")))
 
 #define FFD_ENSURE(C,M) if (! (C)) { \
     printf ("Assertion Failed: %s:%d: " M EOL, __FILE__, __LINE__); \
-    OS::Exit (1); \
+    ::FFD_NS::OS::Exit (1); \
     }
 
 // #include < new >
@@ -67,6 +68,13 @@ using byte = unsigned char;
 // How to call foo::bar::~bar()? Read the question.
 #define FFD_DESTROY_NESTED_OBJECT(P,N,T) \
     { if (nullptr != P) { P->N::~T (); OS::Free (P); } }
+
+// Defines FFD_LIST_IMPL
+#include "ffd_model_list.h"
+// Defines FFD_STRING_IMPL
+#include "ffd_model_string.h"
+// Defines FFD_BYTE_ARRAY_IMPL
+#include "ffd_model_byte_array.h"
 
 FFD_NAMESPACE
 
@@ -90,38 +98,73 @@ template <typename T> void Free(T * & p) { if (p) free (p), p = nullptr; }
 
 }
 
+// How to? Define FFD_LIST_IMPL.
 template <typename T> class List
 {
-    public: List();
-    public: List(List<T> &&);
-    public: const T * begin() const;
-    public: const T * end  () const;
-    public: int Count() const;
+    public: List() {}
+    public: List(List<T> && v)
+    {
+        _.operator= (static_cast<FFD_LIST_IMPL &&>(v._));
+    }
+    public: List(const List<T> & v) { _.operator= (v._); }
+    public: const T * begin() const { return _.begin (); }
+    public: const T * end  () const { return _.end (); }
+    public: int Count() const { return _.Count (); }
     public: inline bool Empty() const { return Count () <= 0; }
-    public: T & Add(const T &);
-    public: List<T> & Put(T &&); // same as add, just T&&
-    public: T & operator[](int);
-    public: const T & operator[](int) const;
-    public: List<T> & operator=(List<T> &&);
-    public: template <typename Fd> T * Find(Fd on_itm);
-};
+    public: T & Add(const T & v) { return _.Add (v); }
+    public: List<T> & Put(T && v) // same as add, just T&&
+    {
+        return _.Put (static_cast<T &&>(v)), *this;
+    }
+    public: T & operator[](int i) { return _[i]; }
+    public: const T & operator[](int i) const { return _[i]; }
+    public: List<T> & operator=(List<T> && v)
+    {
+        if (&v == this) return *this;
+        return  _.operator= (static_cast<FFD_LIST_IMPL &&>(v._)), *this;
+    }
+    public: List<T> & operator=(const List<T> & v)
+    {
+        if (&v == this) return *this;
+        return  _.operator= (v._), *this;
+    }
+    public: template <typename Fd> T * Find(Fd on_itm)
+    {
+        return _.Find (on_itm);
+    }
+    private: FFD_LIST_IMPL _ {};
+};// class List
 
 class String
 {
-    public: String();
-    public: explicit String(const byte *, int);
-    public: String(const char *);
-    public: String(const String &);
-    public: String(String &&);
-    public: String & operator=(const String &);
-    public: String & operator=(String &&);
-    public: bool Empty() const;
-    public: bool operator==(const String &) const;
-    public: bool operator!=(const String &) const;
-    public: bool operator==(const char *) const;
-    public: const char * AsZStr() const;
-    public: List<String> Split(char);
-};
+    public: String() : _ {} {}
+    public: explicit String(const byte * b, int l) : _ {b, l} {}
+    public: String(const char * c) : _ {c} {}
+    public: String(const String & s) { operator= (s); }
+    public: String(String && s) { operator= (static_cast<String &&>(s)); }
+    public: String & operator=(const String & v)
+    {
+        return _.operator= (v._), *this;
+    }
+    public: String & operator=(String && v)
+    {
+        return _.operator= (static_cast<FFD_STRING_IMPL(List<String>) &&>(v._)),
+            *this;
+    }
+    public: bool Empty() const { return _.Empty (); }
+    public: bool operator==(const String & v) const
+    {
+        return _.operator== (v._);
+    }
+    public: bool operator!=(const String & v) const
+    {
+        return _.operator!= (v._);
+    }
+    public: bool operator==(const char * v) const { return _.operator== (v); }
+    public: const char * AsZStr() const { return _.AsZStr (); }
+    public: List<String> Split(char d) { return _.Split (d); }
+    private: FFD_STRING_IMPL(List<String>) _;
+}; // String
 
 inline bool operator==(const char * c, const String & s)
 {
@@ -130,17 +173,24 @@ inline bool operator==(const char * c, const String & s)
 
 class ByteArray// = Buffer
 {
-    public: int Length() const;
-    public: operator byte * () const;
-    public: byte & operator[](int);
-    public: void Resize(int);
+    public: int Length() const { return _.Length (); }
+    public: operator byte * () const { return _.operator byte * (); }
+    public: byte & operator[](int i) { return _[i]; }
+    public: void Resize(int b) { _.Resize (b); }
+    private: FFD_BYTE_ARRAY_IMPL _;
 };
 
+// Unlike the 3 above, this is something you pass; so extend it as you see fit.
+// All sizes and offsets are in [bytes].
+// Failure is handled by the actual IO - this one is expected to return on
+// success only.
 class Stream
 {
-    public: Stream & Read(void *, size_t bytes = 1);
-    public: off_t Tell() const;
-    public: off_t Size() const;
+    public: virtual Stream & Read(void *, size_t = 1) { return *this; }
+    public: virtual off_t Tell() const { return 0; }
+    public: virtual off_t Size() const { return 0; }
+    public: Stream() {}
+    public: virtual ~Stream() {}
 };
 
 NAMESPACE_FFD
