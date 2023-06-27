@@ -37,6 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ffd_model.h"
 #include "ffd_dbg.h"
 #include "ffd.h"
+#include "ffd_node.h"
 
 static void test_the_list();
 static void test_the_string();
@@ -86,9 +87,14 @@ int main(int argc, char ** argv)
         ffd_buf.Resize (ffd_stream.Size ());
         ffd_stream.Read (ffd_buf.operator byte * (), ffd_stream.Size ());
         FFD_NS::FFD ffd {ffd_buf.operator byte * (), ffd_buf.Length ()};
+
+        FFD_NS::TestStream data_stream {argv[2]};
+        auto * tree = ffd.File2Tree (data_stream);
+        FFD_ENSURE(nullptr != tree, "File2Tree() returned null?!")
+        tree->PrintTree ();
     }
     return 0;
-}
+}// main()
 
 // testworks
 static const char * TEST_NAME = "";
