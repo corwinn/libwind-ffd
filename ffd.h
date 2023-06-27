@@ -48,7 +48,7 @@ class FFDNode;
 // used to parse different (I hope; its h3m for now) file formats.
 // A.k.a. transforms binary files into trees.
 //   data = FFD::File2Tree ("description", "file").
-class FFD
+class FFD_EXPORT FFD
 {
     public: FFD(const byte * buf, int len);
     public: ~FFD();
