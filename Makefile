@@ -36,8 +36,8 @@ MAKEFLAGS += rR
 MODEL ?= stl
 
 APP = libwind-ffd.so
-CC ?= clang
-CXX ?= clang++
+CC ?= ccache clang
+CXX ?= ccache clang++
 _W  = -Wall -Wextra -Wshadow
 _O  = -O0 -g -DFFD_DEBUG -fno-exceptions -fno-threadsafe-statics -gdwarf-4
 _F = -fsanitize=address,undefined,integer,leak -fvisibility=hidden
@@ -60,6 +60,9 @@ libwind-ffd.a: $(OBJ)
 clean:
 	find -type f -iname "*~" -delete -o -iname "*.o" -delete
 	rm -f libwind-ffd.a $(APP)
+
+test: $(APP)
+	$(CXX) $(CXXFLAGS) test.cpp -L. -lwind-ffd -Wl,-rpath="${PWD}" -o test
 
 TEST:
 	@echo $(SRC)
