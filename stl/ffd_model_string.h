@@ -88,7 +88,9 @@ template <typename T> class MyString final
             free (t);
             p = c+1;
         }
-        if (p <= _p.size () && r.Count () > 0) {
+        if (p <= _p.size () /*TODO "option: one_token"; breaks the lookup at
+            FFDNode::ResolveSymbols() - the "symbol.symbol"... one
+            && r.Count () > 0*/) {
             auto t = strndup (s+p, c-p);
             r.Add (const_cast<const char *>(t));
             // printf("s: %ld, e: %ld, t: %s" EOL, p, _p.size (), t);
