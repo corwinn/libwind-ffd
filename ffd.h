@@ -319,6 +319,7 @@ class FFD_EXPORT FFD
 
     // public FFDNode * File2Tree(const String & d, const String & f);
     public: FFDNode * File2Tree(Stream &);
+    public: void FreeNode(FFDNode *);
 };// FFD
 
 NAMESPACE_FFD

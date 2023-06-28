@@ -479,13 +479,16 @@ FFD::EnumItem * FFD::SNode::FindEnumItem(const String & name)
 
 List<FFD::SNode *> FFD::SNode::NodesByName(const String & query)
 {
+    Dbg << "FFD::SNode::NodesByName(" << query << ")" << " at " << Name << EOL;
     List<FFD::SNode *> result = {};
     WalkBackwards([&](FFD::SNode * node) {
+        // Dbg << "  WalkBackwards: node->Name: " << node->Name << EOL;
         if (node->Name == query) result.Add (node);
         return true;
     });
     if (Next)
         Next->WalkForward([&](FFD::SNode * node) {
+            // Dbg << "  WalkForward: node->Name: " << node->Name << EOL;
             if (node->Name == query) result.Add (node);
             return true;
         });
@@ -612,6 +615,7 @@ FFDNode * FFD::File2Tree(Stream & fh2)
     Dbg.Enabled = sentinel;
     return data_root;
 }
+void FFD::FreeNode(FFDNode * n) { FFD_DESTROY_OBJECT(n, FFDNode) }
 #undef FFD_ENSURE_FFD
 
 NAMESPACE_FFD
