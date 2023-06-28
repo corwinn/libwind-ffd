@@ -122,12 +122,14 @@ template <typename F> bool eval_expr(
     return ctx.v[0];
 }// eval_expr
 
+//TODO diagram: this looks at siblings of sn->Base
 FFD::SNode * FFDNode::ResolveSNode(const String & n, int & value,
     FFD::SNode * sn, bool resolve_only)
 {//TODO cache me
     Dbg << "  ResolveSNode: requested symbol: " << n << EOL;
     FFD_ENSURE(sn->IsField (), "Field SNodes only!")
     static String sym_name {};
+    Dbg << "  ResolveSNode: sn->Base: " << sn->Base->Name << EOL;
     for (auto sym : sn->Base->NodesByName (n)) {
         Dbg << "  ResolveSNode: symbol: " << sym->Name << EOL;
         if (sym->IsConst () || sym->IsMachType () || sym->IsEnum ()) {
@@ -177,9 +179,9 @@ void FFDNode::ResolveSymbols(ExprCtx & ctx, FFD::SNode * sn, FFDNode * base)
 {
     //TODO this needs serious re-factoring
     //TODO match the formal spec. to the letter
-    Dbg << "   resolve symbol: ";
+    Dbg << "   FFDNode::ResolveSymbols: ";
     if (1 == ctx.i) Dbg << ctx.LSymbol; else Dbg << ctx.RSymbol;
-    Dbg << EOL;
+    Dbg << " for " << sn->Name << EOL;
     if (sn->Base) { // SNode
         int value {};
         bool found {};
@@ -201,6 +203,8 @@ void FFDNode::ResolveSymbols(ExprCtx & ctx, FFD::SNode * sn, FFDNode * base)
        //TODO already set? (on duplicate symbol name for example)
     }
     if (base) { // FFDNode
+        Dbg << "   FFDNode::ResolveSymbols: looking at "
+            << base->FieldNode ()->Name << EOL;
         FFDNode * lsym {}, * rsym {};
         if (! ctx.LSymbol.Empty ()) {
             auto arr = static_cast<List<String> &&>(ctx.LSymbol.Split ('.'));
@@ -297,6 +301,8 @@ void FFDNode::ResolveSymbols(ExprCtx & ctx, FFD::SNode * sn, FFDNode * base)
 
 bool FFDNode::EvalBoolExpr(FFD::SNode * sn, FFDNode * base)
 {
+    Dbg << "FFDNode::EvalBoolExpr(" << sn->Name << ", "
+        << base->FieldNode ()->Name << ")" << EOL;
     int ptr {};
     auto result = eval_expr (sn->Expr, [&](ExprCtx & ctx) {
         ResolveSymbols (ctx, sn, base);
@@ -492,6 +498,7 @@ void FFDNode::FromStruct(FFD::SNode * sn)
 
     for (auto n : sn->Fields) {
         FFDNode * f {};
+        Dbg << "<> " << sn->Name << "." << n->Name << EOL;
         if (n->HasExpr () && ! EvalBoolExpr (n, this)) {
             Dbg << " Eval: false: " << n->Name << EOL;
             continue;
