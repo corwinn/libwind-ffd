@@ -39,6 +39,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "ffd.h"
 #include "ffd_node.h"
 
+// compressed streams support
+#include <zlib.h>
+
 static void test_the_list();
 static void test_the_string();
 static void test_the_byte_arr();
@@ -64,6 +67,54 @@ class TestStream final : public Stream
     private: FILE * _f {};
     private: off_t _s {};
 };
+class TestZipInflateStream : public Stream
+{
+    private: z_stream _zs {};
+    private: int _zr {~Z_OK}, _size, _usize;
+    private: off_t _pos {}; // how many bytes were decoded so far
+    private: static uInt constexpr _IN_BUF {1<<12}; // zlib: uInt
+    private: byte _buf[_IN_BUF] {};
+    private: Stream * _s;
+    // The h3map one differs in init. No need to create another class.
+    public: TestZipInflateStream(Stream * s, int size, int usize,
+        bool h3map = false)
+        : Stream {}, _size{size}, _usize{usize}, _s{s}
+    {
+        if (h3map) _zr = inflateInit2 (&_zs, 31);
+        else _zr = inflateInit (&_zs);
+        FFD_ENSURE(Z_OK == _zr, "inflateInit() error")
+    }
+    public: ~TestZipInflateStream() override { inflateEnd (&_zs); }
+    public: inline operator bool() { return Z_OK == _zr; }
+    // You can use these for progress: 1.0 * Tell() / Size() * 100
+    public: off_t Tell() const override { return _pos; }; // uncompressed
+    public: off_t Size() const override { return _usize; }; // uncompressed
+    public: Stream & Read(void * buf, size_t bytes = 1) override
+    {
+        FFD_ENSURE(bytes <= 0, "bytes can't be <= 0")
+        FFD_ENSURE(nullptr == buf, "buf can't be null")
+        // The sheer elegance of z_stream is impressive.
+        _zs.avail_out = static_cast<uInt>(bytes); // zlib: uInt
+        _zs.next_out = static_cast<z_const Bytef *>(buf);
+        while (_zs.avail_out > 0) {
+            if (_zs.avail_in <= 0) {
+                _zs.avail_in = static_cast<uInt>(_size - _s->Tell ());
+                FFD_ENSURE(_zs.avail_in > 0, "TestZIStream::Read no more input")
+                if (_zs.avail_in > _IN_BUF) _zs.avail_in = _IN_BUF;
+                _s->Read (_buf, _zs.avail_in);
+                _zs.next_in = static_cast<z_const Bytef *>(_buf);
+            }
+            auto sentinel1 = _zs.avail_in;
+            auto sentinel2 = _zs.avail_out;
+            _zr = inflate (&_zs, Z_SYNC_FLUSH);
+            if (Z_STREAM_END == _zr) _zr = Z_OK;
+            FFD_ENSURE(Z_OK == _zr, "TestZIStream::Read error")
+            FFD_ENSURE(sentinel1 != _zs.avail_in || sentinel2 != _zs.avail_out,
+                "TestZIStream::Read infinite loop case")
+        }
+        return _pos += bytes, *this;
+    } // Read()
+};// TestZipInflateStream
 NAMESPACE_FFD
 
 // usage: test ffd data
@@ -81,17 +132,21 @@ int main(int argc, char ** argv)
         FFD_NS::ByteArray ffd_buf {};
         FFD_NS::TestStream ffd_stream {argv[1]};
         Dbg << "Using \"" << argv[1] << "\" (" << ffd_stream.Size ()
-            << " bytes) FFD" << EOL;
+            << " bytes) FFD to parse \"" << argv[2] << "\": ";
         FFD_ENSURE(ffd_stream.Size () > 0 && ffd_stream.Size () < 1<<20,
             "Suspicious FFD size")
         ffd_buf.Resize (ffd_stream.Size ());
         ffd_stream.Read (ffd_buf.operator byte * (), ffd_stream.Size ());
-        FFD_NS::FFD ffd {ffd_buf.operator byte * (), ffd_buf.Length ()};
+        Dbg.Enabled = false;
+            FFD_NS::FFD ffd {ffd_buf.operator byte * (), ffd_buf.Length ()};
+            // h3m-specific processing; - a large test suite
+            auto h3map = ffd.GetAttr ("[Stream(type: zlibMapStream)]");
 
-        FFD_NS::TestStream data_stream {argv[2]};
-        auto * tree = ffd.File2Tree (data_stream);
+            FFD_NS::TestStream data_stream {argv[2]};
+            auto * tree = ffd.File2Tree (data_stream);
+        Dbg.Enabled = true;
         FFD_ENSURE(nullptr != tree, "File2Tree() returned null?!")
-        tree->PrintTree ();
+        // tree->PrintTree ();
         ffd.FreeNode (tree);
     }
     return 0;

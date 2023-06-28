@@ -319,7 +319,14 @@ class FFD_EXPORT FFD
 
     // public FFDNode * File2Tree(const String & d, const String & f);
     public: FFDNode * File2Tree(Stream &);
+    // free the memory used by the parameter
     public: void FreeNode(FFDNode *);
+    // get root-level attribute (temporary - until attributes get assigned to
+    // their respective nodes)
+    public: inline SNode * GetAttr(const String & query) const
+    {
+        return _root->GetAttr (query);
+    }
 };// FFD
 
 NAMESPACE_FFD

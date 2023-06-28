@@ -62,7 +62,7 @@ clean:
 	rm -f libwind-ffd.a $(APP)
 
 test: $(APP)
-	$(CXX) $(CXXFLAGS) test.cpp -L. -lwind-ffd -Wl,-rpath="${PWD}" -o test
+	$(CXX) $(CXXFLAGS) test.cpp -L. -lwind-ffd -Wl,-rpath="${PWD}" -o test -lz
 
 TEST:
 	@echo $(SRC)
