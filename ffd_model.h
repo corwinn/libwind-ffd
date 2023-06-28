@@ -32,6 +32,18 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 **** END LICENCE BLOCK ****/
 
+/*
+     How to (so far)
+    .................
+
+  1. #define FFD_LIST_IMPL       at "ffd_model_list.h"
+  2. #define FFD_STRING_IMPL     at "ffd_model_string.h"
+  3. #define FFD_BYTE_ARRAY_IMPL at "ffd_model_byte_array.h"
+  4. the test suite shall pass
+  5. Extend "Stream"
+
+*/
+
 #ifndef _FFD_MODEL_H_
 #define _FFD_MODEL_H_
 
@@ -99,6 +111,8 @@ template <typename T> void Free(T * & p) { if (p) free (p), p = nullptr; }
 }
 
 // How to? Define FFD_LIST_IMPL.
+// This is intended to contain things that have destructors; so ensure
+// FFD_LIST_IMPL has ~FFD_LIST_IMPL().
 template <typename T> class List
 {
     public: List() {}
@@ -162,6 +176,7 @@ class String
     }
     public: bool operator==(const char * v) const { return _.operator== (v); }
     public: const char * AsZStr() const { return _.AsZStr (); }
+    // Return 1 token when the delimiter isn't found.
     public: List<String> Split(char d) { return _.Split (d); }
     private: FFD_STRING_IMPL(List<String>) _;
 }; // String
