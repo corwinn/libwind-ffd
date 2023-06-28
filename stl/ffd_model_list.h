@@ -43,9 +43,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <vector>
 
+// cleanup - see ~MyList() below
+template <typename T> struct LD { void operator()(T & t) { t.~T (); } };
+template <typename T> struct LD<T *> { void operator()(T *&) {} };
+
 template <typename T> class MyList final
 {
     public: inline MyList() {}
+    public: inline ~MyList()
+    {
+        for (int i = 0; i < Count (); i++) LD<T>{} (_p[i]);
+    }
     public: inline MyList(const MyList<T> & v) { operator= (v); }
     public: inline MyList(MyList<T> && v) { operator= (v); }
     public: inline const T * begin() const
