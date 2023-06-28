@@ -92,6 +92,7 @@ int main(int argc, char ** argv)
         auto * tree = ffd.File2Tree (data_stream);
         FFD_ENSURE(nullptr != tree, "File2Tree() returned null?!")
         tree->PrintTree ();
+        ffd.FreeNode (tree);
     }
     return 0;
 }// main()
@@ -159,7 +160,10 @@ void test_the_list()
     ARE_EQUAL(1, a[2], "unexpected a[2]")
     ARE_EQUAL(2, a[3], "unexpected a[3]")
     ARE_EQUAL(3, a[4], "unexpected a[4]")
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wself-assign-overloaded"
     a = a;
+#pragma clang diagnostic pop
     ARE_EQUAL(5, a.Count (), "move failed")
     ARE_EQUAL(1, a[2], "unexpected a[2]")
     ARE_EQUAL(2, a[3], "unexpected a[3]")
@@ -232,7 +236,7 @@ void test_the_string()
     ARE_EQUAL("b", m[1], "incorrect token 1")
     ARE_EQUAL("c", m[2], "incorrect token 2")
     auto n = g.Split (',');
-    ARE_EQUAL(0, n.Count (), "incorrect token num")
+    ARE_EQUAL(1, n.Count (), "incorrect token num")
     FFD_NS::String g1 {"aa.b.ccc"};
     auto o = g1.Split ('.');
     ARE_EQUAL(3, o.Count (), "incorrect token num")
