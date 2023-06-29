@@ -72,14 +72,14 @@ using byte = unsigned char;
     }
 
 // #include < new >
-#define FFD_CREATE_OBJECT(P,T) OS::Alloc (P), new (P) T
+#define FFD_CREATE_OBJECT(P,T) ::FFD_NS::OS::Alloc (P), new (P) T
 #define FFD_DESTROY_OBJECT(P,T) \
-    { if (nullptr != P) { P->~T (); OS::Free (P); } }
+    { if (nullptr != P) { P->~T (); ::FFD_NS::OS::Free (P); } }
 // Nothing is simple, nor unified, with these people.
 // N - nested type; T - nested type; :) Say: you have foo { bar {}}
 // How to call foo::bar::~bar()? Read the question.
 #define FFD_DESTROY_NESTED_OBJECT(P,N,T) \
-    { if (nullptr != P) { P->N::~T (); OS::Free (P); } }
+    { if (nullptr != P) { P->N::~T (); ::FFD_NS::OS::Free (P); } }
 
 // Defines FFD_LIST_IMPL
 #include "ffd_model_list.h"
