@@ -72,7 +72,8 @@ using byte = unsigned char;
     }
 
 // #include < new >
-#define FFD_CREATE_OBJECT(P,T) ::FFD_NS::OS::Alloc (P), new (P) T
+#define FFD_CREATE_OBJECT(P,T) \
+    ::FFD_NS::OS::Alloc (reinterpret_cast<T *&>(P)), new (P) T
 #define FFD_DESTROY_OBJECT(P,T) \
     { if (nullptr != P) { P->~T (); ::FFD_NS::OS::Free (P); } }
 // Nothing is simple, nor unified, with these people.
