@@ -60,6 +60,7 @@ struct UnqueuedThreadSafeDebugLog final
     inline L & operator<<(short v) { return Fmt ("%d", v); }
     inline L & operator<<(byte v) { return Fmt ("%d", v); }
     inline L & operator<<(const String & v) { return Fmt ("%s", v.AsZStr ()); }
+    inline L & operator<<(void * & v) { return Fmt ("%p", v); }
     // Dbg << Dbg.Fmt ("%foo", bar) << "p" << q << EOL;
     inline L & operator<<(L & l) { return l; }
 
