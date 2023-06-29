@@ -204,6 +204,7 @@ class Stream
     public: virtual Stream & Read(void *, size_t = 1) { return *this; }
     public: virtual off_t Tell() const { return 0; }
     public: virtual off_t Size() const { return 0; }
+    public: virtual Stream & Seek(off_t) { return *this; } // relative - always
     public: Stream() {}
     public: virtual ~Stream() {}
 };
