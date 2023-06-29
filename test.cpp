@@ -41,6 +41,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // compressed streams support
 #include <zlib.h>
+#include <new>
 
 static void test_the_list();
 static void test_the_string();
@@ -57,6 +58,11 @@ class TestStream final : public Stream
     }
     public: off_t Tell() const override { return ftell (_f); }
     public: off_t Size() const override { return _s; }
+    public: Stream & Seek(off_t o) override
+    {
+        return fseek (_f, o, SEEK_CUR), *this;
+    }
+    public: Stream & Reset() override { return Seek (-Tell ()); }
     public: TestStream(const char * fn) : Stream {}, _f{fopen (fn, "rb")}
     {
         if (_f)
@@ -67,7 +73,7 @@ class TestStream final : public Stream
     private: FILE * _f {};
     private: off_t _s {};
 };
-class TestZipInflateStream : public Stream
+class TestZipInflateStream final : public Stream
 {
     private: z_stream _zs {};
     private: int _zr {~Z_OK}, _size, _usize;
@@ -91,8 +97,9 @@ class TestZipInflateStream : public Stream
     public: off_t Size() const override { return _usize; }; // uncompressed
     public: Stream & Read(void * buf, size_t bytes = 1) override
     {
-        FFD_ENSURE(bytes <= 0, "bytes can't be <= 0")
-        FFD_ENSURE(nullptr == buf, "buf can't be null")
+        // Dbg << "ZRead(" << buf << ", " << bytes << ")" << EOL;
+        FFD_ENSURE(bytes > 0, "bytes can't be <= 0")
+        FFD_ENSURE(nullptr != buf, "buf can't be null")
         // The sheer elegance of z_stream is impressive.
         _zs.avail_out = static_cast<uInt>(bytes); // zlib: uInt
         _zs.next_out = static_cast<z_const Bytef *>(buf);
@@ -117,17 +124,23 @@ class TestZipInflateStream : public Stream
 };// TestZipInflateStream
 NAMESPACE_FFD
 
+// h3m-specific
+using SIMPLY_STREAM=FFD_NS::Stream;
+using SIMPLY_ZSTREAM=FFD_NS::TestZipInflateStream;
+
 // usage: test ffd data
 // what does it do: are_equal(data, Tree2File (File2Tree (ffd, data))
 int main(int argc, char ** argv)
 {
-    test_the_list();
-    test_the_string();
-    test_the_byte_arr();
-    if (3 != argc)
-        return Dbg << "usage: test ffd data" << EOL, 0;
-    FFD_NS::String bar {"hi"};
-    Dbg << bar << "\n";
+    Dbg.Enabled = false;
+        test_the_list();
+        test_the_string();
+        test_the_byte_arr();
+        if (3 != argc)
+            return Dbg << "usage: test ffd data" << EOL, 0;
+        FFD_NS::String bar {"hi"};
+        Dbg << bar << "\n";
+    Dbg.Enabled = true;
     {
         FFD_NS::ByteArray ffd_buf {};
         FFD_NS::TestStream ffd_stream {argv[1]};
@@ -140,14 +153,37 @@ int main(int argc, char ** argv)
         Dbg.Enabled = false;
             FFD_NS::FFD ffd {ffd_buf.operator byte * (), ffd_buf.Length ()};
             // h3m-specific processing; - a large test suite
+            FFD_NS::TestStream h3m_stream {argv[2]};
+            SIMPLY_STREAM * data_stream {&h3m_stream};
+            const int H3M_MAX_FILE_SIZE = 1<<21; // 6167 maps: the largest: 375560 bytes
             auto h3map = ffd.GetAttr ("[Stream(type: zlibMapStream)]");
-
-            FFD_NS::TestStream data_stream {argv[2]};
-            auto * tree = ffd.File2Tree (data_stream);
+            if (h3map) {
+                int h, usize{}, size = static_cast<int>(h3m_stream.Size ());
+                printf ("(%d bytes)", size);
+                FFD_ENSURE(size > 3 && size < H3M_MAX_FILE_SIZE,
+                    "Suspicious Map size")
+                h3m_stream.Read (&h, 4).Reset ();
+                if (0x88b1f == h) { // zlibMapStream
+                    h3m_stream.Seek (size - 4).Read (&usize, 4).Reset ();
+                    printf (", USize: %d bytes", usize);
+                    FFD_ENSURE(usize > size && usize < H3M_MAX_FILE_SIZE,
+                        "Suspicious Map usize")
+                    FFD_CREATE_OBJECT(data_stream, SIMPLY_ZSTREAM) {
+                        &h3m_stream, size, usize, nullptr != h3map};
+                }
+                // printf (EOL);
+            }
+            auto * tree = ffd.File2Tree (*data_stream);
         Dbg.Enabled = true;
+        Dbg << ", unprocessed h3m_stream bytes: "
+            << h3m_stream.Size() - h3m_stream.Tell() << EOL;
         FFD_ENSURE(nullptr != tree, "File2Tree() returned null?!")
         // tree->PrintTree ();
         ffd.FreeNode (tree);
+
+        // h3m-specific
+        if (&h3m_stream != data_stream)
+            FFD_DESTROY_OBJECT(data_stream, SIMPLY_STREAM)
     }
     return 0;
 }// main()
