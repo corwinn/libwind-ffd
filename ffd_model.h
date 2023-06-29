@@ -205,6 +205,8 @@ class Stream
     public: virtual off_t Tell() const { return 0; }
     public: virtual off_t Size() const { return 0; }
     public: virtual Stream & Seek(off_t) { return *this; } // relative - always
+    // you've just been constructed
+    public: virtual Stream & Reset() { return *this; }
     public: Stream() {}
     public: virtual ~Stream() {}
 };
