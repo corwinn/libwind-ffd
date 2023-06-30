@@ -165,6 +165,7 @@ int main(int argc, char ** argv)
             if (ffd.GetAttr ("[Stream(type: zlibMapStream)]"))
                 tree = parse_h3m (ffd, argv[2]);
             else {
+                Dbg << "File2Tree" << EOL;
                 FFD_NS::TestStream data_stream {argv[2]};
                 tree = ffd.File2Tree (data_stream);
             }
