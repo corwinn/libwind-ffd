@@ -65,6 +65,8 @@ class FFD_EXPORT FFD
     public: enum class SConstType {None, Int, Text};
     public: class EnumItem final
     {
+        public: EnumItem() {}
+        public: EnumItem(int v) : Value{v} {}
         public: String Name {};
         public: int Value {};
         public: List<FFDParser::ExprToken> Expr {};
