@@ -67,7 +67,8 @@ keywords:
              parser starts
   "const" - a {symbol} bound to a {literal}
   "enum" - a list of {const}s grouped by {type}; the initial empty space for
-           the list items is mandatory;
+           the list items is mandatory; list item:
+             {whitespace} {symbol} [{int literal}] [{expr}]
 
 literal : a value directly encoded in the FFD:
   - integer: 32-bit; decimal or hexadecimal
