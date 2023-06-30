@@ -64,7 +64,7 @@ struct UnqueuedThreadSafeDebugLog final
     // Dbg << Dbg.Fmt ("%foo", bar) << "p" << q << EOL;
     inline L & operator<<(L & l) { return l; }
 
-    bool Enabled {true};
+    bool Enabled {true}; //TODO debug channels, please
     FFD_EXPORT static UnqueuedThreadSafeDebugLog & D();
 };
 
