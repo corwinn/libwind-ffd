@@ -40,9 +40,13 @@ CC ?= ccache clang
 CXX ?= ccache clang++
 _W  = -Wall -Wextra -Wshadow
 _O  = -O0 -g -DFFD_DEBUG -fno-exceptions -fno-threadsafe-statics -gdwarf-4
+ifeq ($Q, 1)
+_F = -fvisibility=hidden
+else
 _F = -fsanitize=address,undefined,integer,leak -fvisibility=hidden
-#_F = -fvisibility=hidden
+endif
 _I  = -I. -I$(MODEL)
+_L  = -L. -lwind-ffd -Wl,-rpath="${PWD}"
 CXXFLAGS = $(_I) -std=c++14 -fPIC $(_O) $(_F) $(_W)
 SRC = $(wildcard *.cpp)
 SRC := $(filter-out test.cpp,$(SRC))
@@ -62,11 +66,13 @@ clean:
 	rm -f libwind-ffd.a $(APP)
 
 test: $(APP)
-	$(CXX) $(CXXFLAGS) test.cpp -L. -lwind-ffd -Wl,-rpath="${PWD}" -o test -lz
+	$(CXX) $(CXXFLAGS) test.cpp $(_L) -o test -lz
 
 TEST:
 	@echo $(SRC)
 	@echo $(OBJ)
+	@echo $(TARGET)
+	@echo $@
 
 cake: universe
 
