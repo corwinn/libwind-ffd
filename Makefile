@@ -41,7 +41,7 @@ CXX ?= ccache clang++
 _W  = -Wall -Wextra -Wshadow
 _O  = -O0 -g -DFFD_DEBUG -fno-exceptions -fno-threadsafe-statics -gdwarf-4
 ifeq ($Q, 1)
-_F = -fvisibility=hidden
+_F = -DFFD_QTEST -fvisibility=hidden
 else
 _F = -fsanitize=address,undefined,integer,leak -fvisibility=hidden
 endif

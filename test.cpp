@@ -158,7 +158,9 @@ int main(int argc, char ** argv)
             "Suspicious FFD size")
         ffd_buf.Resize (ffd_stream.Size ());
         ffd_stream.Read (ffd_buf.operator byte * (), ffd_stream.Size ());
+#ifdef FFD_QTEST
         Dbg.Enabled = false;
+#endif
             FFD_NS::FFD ffd {ffd_buf.operator byte * (), ffd_buf.Length ()};
 
             FFD_NS::FFDNode * tree{};
