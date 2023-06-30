@@ -124,9 +124,17 @@ class TestZipInflateStream final : public Stream
 };// TestZipInflateStream
 NAMESPACE_FFD
 
-// h3m-specific
-using SIMPLY_STREAM=FFD_NS::Stream;
-using SIMPLY_ZSTREAM=FFD_NS::TestZipInflateStream;
+namespace __pointless_verbosity
+{
+    template <typename T> struct __try_finally_free_the_object
+    {
+        T * _p;
+        __try_finally_free_the_object(T * p) : _p{p} {}
+        ~__try_finally_free_the_object() { if (_p) FFD_DESTROY_OBJECT(_p, T) }
+    };
+}
+
+static FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD &, const char *);
 
 // usage: test ffd data
 // what does it do: are_equal(data, Tree2File (File2Tree (ffd, data))
@@ -152,43 +160,54 @@ int main(int argc, char ** argv)
         ffd_stream.Read (ffd_buf.operator byte * (), ffd_stream.Size ());
         Dbg.Enabled = false;
             FFD_NS::FFD ffd {ffd_buf.operator byte * (), ffd_buf.Length ()};
-            // h3m-specific processing; - a large test suite
-            FFD_NS::TestStream h3m_stream {argv[2]};
-            SIMPLY_STREAM * data_stream {&h3m_stream};
-            const int H3M_MAX_FILE_SIZE = 1<<21; // 6167 maps: the largest: 375560 bytes
-            auto h3map = ffd.GetAttr ("[Stream(type: zlibMapStream)]");
-            if (h3map) {
-                int h, usize{}, size = static_cast<int>(h3m_stream.Size ());
-                printf ("(%d bytes)", size);
-                FFD_ENSURE(size > 3 && size < H3M_MAX_FILE_SIZE,
-                    "Suspicious Map size")
-                h3m_stream.Read (&h, 4).Reset ();
-                if (0x88b1f == h) { // zlibMapStream
-                    h3m_stream.Seek (size - 4).Read (&usize, 4).Reset ();
-                    printf (", USize: %d bytes", usize);
-                    FFD_ENSURE(usize > size && usize < H3M_MAX_FILE_SIZE,
-                        "Suspicious Map usize")
-                    FFD_CREATE_OBJECT(data_stream, SIMPLY_ZSTREAM) {
-                        &h3m_stream, size, usize, nullptr != h3map};
-                }
-                // printf (EOL);
+
+            FFD_NS::FFDNode * tree{};
+            if (ffd.GetAttr ("[Stream(type: zlibMapStream)]"))
+                tree = parse_h3m (ffd, argv[2]);
+            else {
+                FFD_NS::TestStream data_stream {argv[2]};
+                tree = ffd.File2Tree (data_stream);
             }
-            auto * tree = ffd.File2Tree (*data_stream);
-        Dbg.Enabled = true;
-        Dbg << ", unprocessed h3m_stream bytes: "
-            << h3m_stream.Size() - h3m_stream.Tell() << EOL;
         FFD_ENSURE(nullptr != tree, "File2Tree() returned null?!")
         // tree->PrintTree ();
         ffd.FreeNode (tree);
-
-        // h3m-specific
-        if (&h3m_stream != data_stream)
-            FFD_DESTROY_OBJECT(data_stream, SIMPLY_STREAM)
     }
     return 0;
 }// main()
 
-// testworks
+FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD & ffd, const char * map)
+{
+    using SIMPLY_STREAM=FFD_NS::Stream;
+    using SIMPLY_ZSTREAM=FFD_NS::TestZipInflateStream;
+    FFD_NS::TestStream h3m_stream {map};
+    SIMPLY_STREAM * data_stream {&h3m_stream};
+     // 6167 maps: the largest: 375560 bytes, uncompressed one: 1342755 bytes
+    const int H3M_MAX_FILE_SIZE = 1<<21;
+    int h, usize{}, size = static_cast<int>(h3m_stream.Size ());
+    printf ("(%d bytes)", size);
+    FFD_ENSURE(size > 3 && size < H3M_MAX_FILE_SIZE,
+        "Suspicious Map size")
+    h3m_stream.Read (&h, 4).Reset ();
+    if (0x88b1f == h) { // zlibMapStream
+        h3m_stream.Seek (size - 4).Read (&usize, 4).Reset ();
+        printf (", USize: %d bytes", usize);
+        FFD_ENSURE(usize > size && usize < H3M_MAX_FILE_SIZE,
+            "Suspicious Map usize")
+        FFD_CREATE_OBJECT(data_stream, SIMPLY_ZSTREAM) {
+            &h3m_stream, size, usize, /*h3map:*/true};
+    }
+
+    __pointless_verbosity::__try_finally_free_the_object<SIMPLY_STREAM> __ {
+        &h3m_stream != data_stream ? data_stream : nullptr};
+    auto * tree = ffd.File2Tree (*data_stream);
+
+    Dbg.Enabled = true;
+    Dbg << ", unprocessed h3m_stream bytes: "
+        << h3m_stream.Size() - h3m_stream.Tell() << EOL;
+    return tree;
+}// parse_h3m()
+
+// __ testworks ________________________________________________________________
 static const char * TEST_NAME = "";
 #define ARE_EQUAL(A,B,M) FFD_ENSURE((A) == (B), M) \
     Dbg << " OK: " << TEST_NAME << " "#A" == "#B EOL;
