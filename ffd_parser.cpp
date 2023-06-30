@@ -169,7 +169,7 @@ int FFDParser::ParseIntLiteral()
         ReadWhile ("int lit.",
                     [&](){ return is_hexadecimal_number (_buf[_i]); });
         FFD_ENSURE_LFFD(_i - j <= 8, "Integer literal too long")
-        for (int k = _i-1, p = 1; k >= j; k--, p *= 16) {
+        for (int k = _i-1, p = 1; k >= j; k--, p *= (k >= j ? 16 : 1)) {
             int number = is_decimal_number (_buf[k]) ? _buf[k] - '0'
                 : 10 + _buf[k] - (is_upper (_buf[k]) ? 'A' : 'a');
             tmp_result += N[number] * p;
