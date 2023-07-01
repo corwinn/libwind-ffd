@@ -213,10 +213,14 @@ bool FFD::SNode::ParseCompositeField(FFDParser & parser, int j)
     Name = "{composite}";
     Dbg << "Field: composite. DTypeName: " << DTypeName << EOL;
     if (parser.IsEol ()) return true;
+    // if there is no expr - restore it, so FFD::SNode::ParseField() can handle
+    // SkipLineWhitespace(); use case: {Composite} {Comment}
+    int p = parser.Tell ();
     parser.SkipLineWhitespace ();
     if (parser.AtExprStart ())
         Expr = static_cast<List<FFDParser::ExprToken> &&>(
             parser.TokenizeExpression ());
+    else parser.SetCurrent (p);
     // comment(s) and whitespace are handled by FFD::SNode::ParseField()
     return true;
 }
