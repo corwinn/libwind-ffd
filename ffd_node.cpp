@@ -392,6 +392,9 @@ void FFDNode::EvalArray()
                 OS::Memcpy(_data.operator byte * () + _data.Length () -
                     n->DType->Size, &b, n->DType->Size);
             }
+            Dbg << " ++dim read until len: " << _data.Length () << EOL;
+            String preview {_data.operator byte * (), _data.Length ()};
+            Dbg << " ++dim read until as text: " << preview << EOL;
             //TODO [][-key], [-key][], [-key][-key]
         }
         else {
