@@ -76,12 +76,12 @@ class FFD_EXPORT FFD
     {
         public: String Name {}; // Empty when Value is used
         public: int Value {}; // 0 when Name is used
-        public: inline bool None() const { return Name.Empty () && Value <= 0; }
+        public: inline bool None() const { return Name.Empty () && 0 == Value; }
         public: inline void DbgPrint()
         {
             if (None ()) return;
-            if (Value > 0) Dbg << "intlit: " << Value;
-                      else Dbg << "symbol: " << Name;
+            if (Name.Empty ()) Dbg << "intlit: " << Value;
+                          else Dbg << "symbol: " << Name;
         }
     };
     // Syntax node - these are created as a result of parsing the description.

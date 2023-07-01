@@ -376,6 +376,24 @@ void FFDNode::EvalArray()
                 Dbg << " ++dim size (ffdnode): " << arr_size << " items" << EOL;
             }
         }// ! n->Arr[i].Name.Empty ()
+        else if (n->Arr[i].Value < 0) { // "-key" - read until "key"
+            FFD_ENSURE(0 == i, "multi-dim read-until arrays not supported yet")
+            FFD_ENSURE(n->DType->IsMachType () || n->DType->IsEnum (),
+                "negative array size")
+            FFD_ENSURE(1 == n->DType->Size || 2 == n->DType->Size
+                || 4 == n->DType->Size, "read-until: unsupported item size")
+            int key = -n->Arr[i].Value;
+            Dbg << " ++dim read until \"" << key << "\"" << EOL;
+            auto sa = _s->Size (); // cached on purpose; - just in case
+            for (int b = key; _s->Tell () < sa;) { //TODO optimize me
+                _s->Read (&b, n->DType->Size);
+                if (b == key) break;
+                _data.Resize (_data.Length () + n->DType->Size);
+                OS::Memcpy(_data.operator byte * () + _data.Length () -
+                    n->DType->Size, &b, n->DType->Size);
+            }
+            //TODO [][-key], [-key][], [-key][-key]
+        }
         else {
             Dbg << " ++dim value (intlit): " << n->Arr[i].Value << " items"
                 << EOL;
@@ -385,8 +403,9 @@ void FFDNode::EvalArray()
         final_size *= arr_size;
     }
     Dbg << " ++array size: " << final_size << EOL;
-    if (0 == final_size) {// An actual use-case: "Atlantis_1029662174.h3m".
-        Dbg << "Warning: array final_size of 0: nothing to read" << EOL;
+    if (0 == final_size) { // An actual use-case: "Atlantis_1029662174.h3m".
+        if (0 == _data.Length ())
+            Dbg << "Warning: array final_size of 0: nothing to read" << EOL;
         return;
     }
     FFD_ENSURE(final_size >= 0 && final_size <= 1<<21, // H3M_MAX_FILE_SIZE
