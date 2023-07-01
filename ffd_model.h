@@ -100,6 +100,11 @@ auto Strncmp = [](const char * a, const char * b, size_t n)
     return strncmp (a, b, n);
 };
 
+auto Memcpy = [](void * dest, const void * src, size_t n)
+{
+    memcpy (dest, src, n);
+};
+
 template <typename T> void Alloc(T *& p, size_t n = 1)
 {
     FFD_ENSURE(n > 0, "n < 1")
