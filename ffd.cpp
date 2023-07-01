@@ -208,6 +208,12 @@ bool FFD::SNode::ParseStruct(FFDParser & parser)
 // "j" - base (where it starts)
 bool FFD::SNode::ParseCompositeField(FFDParser & parser, int j)
 {
+    int t = parser.Tell ();
+    parser.SetCurrent (j);
+    if (parser.AtArrStart ()) // field attribute
+        return FFD::SNode::ParseAttribute (parser);
+    else parser.SetCurrent (t);
+
     Composite = true;
     DTypeName = static_cast<String &&>(parser.StringAt (j, parser.Tell ()-j));
     Name = "{composite}";
@@ -336,7 +342,7 @@ bool FFD::SNode::ParseField(FFDParser & parser)
         }// (parser.IsLineWhitespace ())
     }// (;; i++)
     // Read optional: expression, etc.
-    if (! parser.HasMoreData ()) return true;
+    if (! parser.HasMoreData () || IsAttribute ()) return true;
     if (parser.IsEol ()) { parser.SkipEol () ; return true; }
     parser.SkipLineWhitespace ();
     if (parser.AtExprStart ())
