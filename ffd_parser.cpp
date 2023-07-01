@@ -291,6 +291,7 @@ FFDParser::ExprTokenType FFDParser::TokenizeExpressionOp()
 {
     FFD_ENSURE_LFFD(_i < _len-2, "Incomplete expr.")
     switch (_buf[_i]) {
+        case '\n': case '\r': return ++_i, ExprTokenType::None;
         case '!':
             switch (_buf[_i+1]) {
                 case '=' :
@@ -330,7 +331,8 @@ FFDParser::ExprTokenType FFDParser::TokenizeExpressionOp()
             FFD_ENSURE_LFFD(is_line_whitespace (_buf[_i+2]), "Wrong Op")
             Dbg << "&& ";
             return _i+=2, ExprTokenType::opAnd;
-        default: FFD_ENSURE_LFFD(1^1, "Unknown Op")
+        default: Dbg << "\"" << _buf[_i] << "\" <- ";
+                 FFD_ENSURE_LFFD(1^1, "Unknown Op")
     }// switch (_buf[_i])
 }// FFDParser::TokenizeExpressionOp()
 
