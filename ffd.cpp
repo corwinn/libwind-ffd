@@ -403,8 +403,8 @@ bool FFD::SNode::ParseEnum(FFDParser & parser)
     }
     FFD_ENSURE_FFD(parser.HasMoreData (), "Incomplete enum") // enum foo.*EOLEOF
     FFD_ENSURE_FFD(! parser.IsEol (), "Empty enum") // enum foo.*EOLEOL
-    for (int auto_value = 0; ; auto_value++) {
-        FFD_ENSURE_FFD(auto_value < FFD_MAX_ENUM_ITEMS, "Refine your design")
+    for (int chk = 0, auto_value = 0; ; chk++, auto_value++) {
+        FFD_ENSURE_FFD(chk < FFD_MAX_ENUM_ITEMS, "Refine your design")
         // TODO code-gen: auto-sync to formal_description
         // {whitespace} {symbol} [{int literal}] [{expr}]
         // i
@@ -415,7 +415,7 @@ bool FFD::SNode::ParseEnum(FFDParser & parser)
         if (parser.IsEol ()) parser.SkipEol ();
         else {
             parser.SkipLineWhitespace ();
-            itm.Value = parser.ParseIntLiteral ();
+            auto_value = itm.Value = parser.ParseIntLiteral ();
             Dbg << "EnumItem: Value: " << itm.Value << EOL;
             if (parser.IsEol ()) parser.SkipEol ();
             else {
