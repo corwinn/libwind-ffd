@@ -294,10 +294,9 @@ class FFD_EXPORT FFD
                 if (f->DType->IsStruct ()) return 0;
                 if (f->Array) {
                     int arr_result = 1, i {};
-                    for (; i < 3 && ! Arr[i].None (); i++) {
+                    for (; i < 3 && ! f->Arr[i].None (); i++) {
                         if (! f->Arr[i].Name.Empty ()) {
-                            FFD_ENSURE(nullptr != Base, "array node w/o Base?")
-                            auto n = Base->NodeByName (f->Arr[i].Name);
+                            auto n = NodeByName (f->Arr[i].Name);
                             if (n && ! n->IsIntConst ()) return 0;
                             arr_result *= n->IntLiteral;
                         }
