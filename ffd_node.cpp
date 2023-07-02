@@ -423,7 +423,9 @@ void FFDNode::EvalArray()
         _data.Resize (final_size);
         _s->Read (_data.operator byte * (), final_size);
         Dbg << " ++data: "; PrintByteSequence ();
-        if ("MapString" == n->Base->Name) //LATER by attribute: [Text]
+        //TODO HasAttribute() while n->Base->Prev && n->Base->Prev->IsAttribute()
+        if (n->Base->Prev && n->Base->Prev->IsAttribute () &&
+            n->Base->Prev->Attribute == "[Text]")
             Dbg << " ++text: " << AsString () << EOL;
     }
     else {// array item
