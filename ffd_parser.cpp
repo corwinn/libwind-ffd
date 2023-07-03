@@ -190,14 +190,20 @@ String FFDParser::ReadExpression(char open, char close)
     FFD_ENSURE_LFFD(open != '(' && close != ')',
         "These are handled by TokenizeExpression()")
     int b = 0;
+    bool e = open ^ close;
     FFD_ENSURE_LFFD(open == _buf[_i], "An expression must start with (")
     int j = _i;
     ReadWhile("expr.   ",
         [&](){
             // Wrong symbols shall be detected at the evaluator - no point to
             // evaluate here.
-            if (open == _buf[_i]) b++;
-            else if (close == _buf[_i]) b--;
+            if (e) {
+                if (open == _buf[_i]) b++;
+                else if (close == _buf[_i]) b--;
+            } else {
+                if (open == _buf[_i] && 0 == b) b++;
+                else if (close == _buf[_i]) b--; //TODO and not "\"-ed
+            }
             FFD_ENSURE_LFFD(
                 b >= 0 && b <= FFD_EXPR_MAX_NESTED_EXPR, "Wrong expr.")
             return b > 0 && _buf[_i] >= 32 && _buf[_i] <= 126;});
