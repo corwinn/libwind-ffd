@@ -419,24 +419,28 @@ bool FFD::SNode::ParseEnum(FFDParser & parser)
         // {whitespace} {symbol} [{int literal}] [{expr}]
         // i
         parser.SkipLineWhitespace ();
-        if (parser.IsComment ())
+        if (parser.IsComment ()) // {comment}
             parser.SkipCommentWhitespaceSequence (), chk--, auto_value--;
         else {
             EnumItem itm {auto_value};
             itm.Name = static_cast<String &&>(parser.ReadSymbol ());
             Dbg << "EnumItem: Name: " << itm.Name << EOL;
-            if (parser.IsEol ()) parser.SkipEol ();
+            if (parser.IsEol ()) parser.SkipEol (); // {name}EOL
             else {
                 parser.SkipLineWhitespace ();
-                auto_value = itm.Value = parser.ParseIntLiteral ();
-                Dbg << "EnumItem: Value: " << itm.Value << EOL;
-                if (parser.IsEol ()) parser.SkipEol ();
+                if (parser.IsComment ()) // {name} {comment}
+                    parser.SkipCommentWhitespaceSequence ();
                 else {
-                    if (parser.AtExprStart ())
-                        itm.Expr = static_cast<List<FFDParser::ExprToken> &&>(
-                            parser.TokenizeExpression ());
-                    else
-                        parser.SkipCommentWhitespaceSequence ();
+                    auto_value = itm.Value = parser.ParseIntLiteral ();
+                    Dbg << "EnumItem: Value: " << itm.Value << EOL;
+                    if (parser.IsEol ()) parser.SkipEol (); // {name} {value}
+                    else {
+                        if (parser.AtExprStart ()) // {name} {value} {expr}
+                            itm.Expr = static_cast<List<FFDParser::ExprToken> &&>(
+                                parser.TokenizeExpression ());
+                        else
+                            parser.SkipCommentWhitespaceSequence ();
+                    }
                 }
             }
             EnumItems.Add (itm);//TODO option: EnumItem duplicate value check
