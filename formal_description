@@ -68,7 +68,7 @@ keywords:
   "const" - a {symbol} bound to a {literal}
   "enum" - a list of {const}s grouped by {type}; the initial empty space for
            the list items is mandatory; list item:
-             {whitespace} {symbol} [{int literal}] [{expr}]
+             {whitespace} {symbol} [{int literal}] [{expr}] [{comment}]
 
 literal : a value directly encoded in the FFD:
   - integer: 32-bit; decimal or hexadecimal
