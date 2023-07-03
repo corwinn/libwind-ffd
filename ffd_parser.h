@@ -79,6 +79,7 @@ class FFDParser
     public: inline bool AtArrEnd() const { return ']' == _buf[_i]; }
     public: inline bool AtArrStart() const { return '[' == _buf[_i]; }
     public: inline bool AtVariadicStart() const { return '.' == _buf[_i]; }
+    public: inline bool AtFp() const { return '.' == _buf[_i]; }
     // At value-list separator.
     public: inline bool AtVListSep() const { return ':' == _buf[_i]; }
     public: inline bool AtDoubleQuote() const { return '"' == _buf[_i]; }

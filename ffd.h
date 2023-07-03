@@ -204,6 +204,7 @@ class FFD_EXPORT FFD
         // Type == SType::MachType
         public: bool Signed {};
         public: int Size {};
+        public: bool Fp {}; // floating point
         // public SNode * Alias {};  // This could become useful later
 
         public: List<EnumItem> EnumItems {};

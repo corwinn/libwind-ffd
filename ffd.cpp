@@ -112,10 +112,12 @@ bool FFD::SNode::ParseMachType(FFDParser & parser)
         Signed = an->Signed;
     }
     else {// size
+        if (parser.AtFp ())
+            Fp = true, parser.SkipOneByte ();
         Size = parser.ParseIntLiteral ();
         if (Size < 0) { Signed = true; Size = -Size; }
-        Dbg << "MachType: " << Size << " bytes, "
-            << (Signed ? "signed" : "unsigned") << EOL;
+        Dbg << "MachType: " << Size << " bytes, " << (Fp ? "floating-point"
+            : (Signed ? "signed" : "unsigned")) << EOL;
     }
     if (parser.IsEol ()) return true; // completed
     // There could be an expression
