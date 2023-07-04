@@ -165,19 +165,31 @@ FFD::SNode::~SNode()
 bool FFD::SNode::ParseStruct(FFDParser & parser)
 {
     Type = FFD::SType::Struct;
-
     parser.SkipLineWhitespace ();
+    auto p = parser.Tell ();
+    auto s = parser.TokenizeUntilWhiteSpace ("<>");
+    FFD_ENSURE(s.Count () > 0, "TokenizeUntilWhiteSpace returned 0 tokens")
+    Dbg << "Struct: " << s[0] << ": ";
+    if (s.Count () > 1) {
+        parser.SetCurrent (p); //TODO come on
+        s = parser.TokenizeUntilWhiteSpace ("<>,");
+        Name = s[0];
+        Dbg << "parametrized: \"" << s[1] << "\"";
+        for (int i = 2; i < s.Count (); i++) Dbg << ", \"" << s[i] << "\"";
+        Dbg << EOL;
+    } else {
+        parser.SetCurrent (p); //TODO come on
 //np ReadSymbol (stop_at: ':', allow_dot: true);
-    Name = static_cast<String &&>(parser.ReadSymbol (':', true));
-    Dbg << "Struct: " << Name << EOL;
-    if (parser.AtVListSep ()) {
-        Dbg << "Struct: variadic list item" << EOL;
-        VListItem = true;
-        parser.SkipOneByte ();
-        FFD_ENSURE_FFD(parser.HasMoreData (), "Incomplete value-list")
-        ValueList =
-            static_cast<List<FFDParser::VLItem > &&>(parser.ReadValueList ());
-        // Dbg << "Struct: ValueList: " << ValueList << EOL;
+        Name = static_cast<String &&>(parser.ReadSymbol (':', true));
+        if (parser.AtVListSep ()) {
+            Dbg << "variadic list item" << EOL;
+            VListItem = true;
+            parser.SkipOneByte ();
+            FFD_ENSURE_FFD(parser.HasMoreData (), "Incomplete value-list")
+            ValueList =
+                static_cast<List<FFDParser::VLItem > &&>(parser.ReadValueList ());
+            // Dbg << "Struct: ValueList: " << ValueList << EOL;
+        }
     }
     // skip remaining white-space(s) and comment(s)
     FFD_ENSURE_FFD(parser.HasMoreData (), "Incomplete struct")// struct .*EOF
