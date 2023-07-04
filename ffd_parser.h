@@ -116,6 +116,7 @@ class FFDParser
     public: void SkipLineWhitespace();
     public: void SkipComment();
     public: String ReadSymbol(char stop_at = '\0', bool allow_dot = false);
+    public: List<String> TokenizeUntilWhiteSpace(const char * d);
     public: int ParseIntLiteral();
     public: String ReadExpression(char open, char close);
     public: void SkipCommentWhitespaceSequence();

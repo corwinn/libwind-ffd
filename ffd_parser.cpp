@@ -136,6 +136,21 @@ String FFDParser::ReadSymbol(char stop_at, bool allow_dot)
     return static_cast<String &&>(String {_buf+j, _i-j});
 }
 
+// Handle symbols like: token<token,token>
+List<String> FFDParser::TokenizeUntilWhiteSpace(const char * d)
+{
+    List<String> r {};
+    int j = _i;
+    auto a_delimiter = [](const char * l, const byte & c) {
+        while (*l) if (*l++ == c) return true; return false;
+    }; // "gnu c", pay attention
+    while (_i < _len && _buf[_i] > 32 && _buf[_i] <= 126)
+        if (a_delimiter (d, _buf[_i++]))
+            r.Put (static_cast<String &&>(String {_buf+j, _i-1-j})), j = _i;
+    if (_i > j) r.Put (String {_buf+j, _i-j});
+    return r;
+}
+
 static inline bool is_decimal_number(byte b)
 {
     return b >= '0' && b <= '9';
