@@ -116,6 +116,8 @@ expression: a script being evaluated when needed (always enclosed in ()):
                     is read from the stream at the current offset; 2 - fields
                     referring the key will not get its value, but the table
                     value this keys is referring to.
+                    Now, since parametrized types appeared:
+                      - "key_type<param><>hashtype" becomes complicated
 
 char-set: ASCII; bytes that shall reward you with an exception:
   [0;10), [11;13), [14;31], [127;255]
