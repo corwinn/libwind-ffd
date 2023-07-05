@@ -176,7 +176,6 @@ bool FFD::SNode::ParseStruct(FFDParser & parser)
         Name = s[0];
         Dbg << "parametrized: \"" << s[1] << "\"";
         for (int i = 2; i < s.Count (); i++) Dbg << ", \"" << s[i] << "\"";
-        Dbg << EOL;
     } else {
         parser.SetCurrent (p); //TODO come on
 //np ReadSymbol (stop_at: ':', allow_dot: true);
@@ -191,6 +190,7 @@ bool FFD::SNode::ParseStruct(FFDParser & parser)
             // Dbg << "Struct: ValueList: " << ValueList << EOL;
         }
     }
+    Dbg << EOL;
     // skip remaining white-space(s) and comment(s)
     FFD_ENSURE_FFD(parser.HasMoreData (), "Incomplete struct")// struct .*EOF
     parser.SkipCommentWhitespaceSequence ();
@@ -257,7 +257,8 @@ bool FFD::SNode::ParseField(FFDParser & parser)
     // Either a symbol or a comment
     while (parser.IsComment ()) { // multi-one-line comments
         parser.SkipCommentWhitespaceSequence ();
-        FFD_ENSURE_FFD(parser.HasMoreData (), "Incomplete field")
+        if (! parser.HasMoreData ()) return true; // {comment}{EOL}{EOF}
+        if (parser.IsEol ()) return true;
         parser.SkipLineWhitespace ();
     }
     // What is it? "type<>type[] symbol" or "typeEOL" or "type " or "..."
