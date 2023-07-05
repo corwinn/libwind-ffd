@@ -74,7 +74,7 @@ class FFDParser
     //public inline bool TokenIs(byte v) const { return byte == _buf[_i]; }
     public: inline bool AtAttributeStart() const { return '[' == _buf[_i]; }
     public: inline bool AtExprStart() const { return '(' == _buf[_i]; }
-    public: inline bool AtHashStart() const { return '<' == _buf[_i]; }
+    public: inline bool AtHashStart() const { return '-' == _buf[_i]; }
     public: inline bool AtHashEnd() const { return '>' == _buf[_i]; }
     public: inline bool AtArrEnd() const { return ']' == _buf[_i]; }
     public: inline bool AtArrStart() const { return '[' == _buf[_i]; }

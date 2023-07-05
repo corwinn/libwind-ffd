@@ -104,7 +104,7 @@ expression: a script being evaluated when needed (always enclosed in ()):
                     sub-node named "bar".
                     The initial empty space is mandatory.
 
-                    {symbol}1<>{symbol}2 - marks symbol1 to be a key at a field
+                    {symbol}1->{symbol}2 - marks symbol1 to be a key at a field
                     of type symbol2; symbol resolution applies in order to find
                     symbol2 (should this happen to lead to too much confusion a
                     lookup by struct.field_name shall be used instead); these
@@ -117,7 +117,7 @@ expression: a script being evaluated when needed (always enclosed in ()):
                     referring the key will not get its value, but the table
                     value this keys is referring to.
                     Now, since parametrized types appeared:
-                      - "key_type<param><>hashtype" becomes complicated
+                      - "key_type<param>->hashtype" becomes a TODO
 
 char-set: ASCII; bytes that shall reward you with an exception:
   [0;10), [11;13), [14;31], [127;255]

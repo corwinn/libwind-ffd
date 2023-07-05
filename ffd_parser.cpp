@@ -312,7 +312,7 @@ FFDParser::ExprTokenType FFDParser::TokenizeExpressionOp()
 {
     FFD_ENSURE_LFFD(_i < _len-2, "Incomplete expr.")
     switch (_buf[_i]) {
-        case '\n': case '\r': return ++_i, ExprTokenType::None;
+        case '\n': _line++; case '\r': return ++_i, ExprTokenType::None;
         case '!':
             switch (_buf[_i+1]) {
                 case '=' :
