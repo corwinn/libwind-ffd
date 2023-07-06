@@ -368,6 +368,68 @@ class FFDNode
     }
 
     public: inline const ByteArray * AsByteArray() { return &_data; }
+
+    public: inline int IntArrElementAt(int index)
+    {
+        auto dt = FieldNode ()->DType;
+        FFD_ENSURE(dt != nullptr, "IntArrElementAt: DType can't be null")
+        FFD_ENSURE(dt->IsIntType (), "IntArrElementAt: not an int array")
+        switch (dt->Size) {//TODO <size: size_t, signed: bool> to Type
+            case 1: return AsArr<byte> ()[index]; break;
+            case 2: return dt->Signed ? AsArr<short> ()[index]
+                : AsArr<unsigned short> ()[index];
+            case 4: return dt->Signed ? AsArr<int>()[index]
+                : AsArr<unsigned int>()[index];
+            default: FFD_ENSURE(0, "IntArrElementAt: unhandled DType->Size")
+        }
+    }
+
+    // State of a variadic field that should iteratively be resolved to a struct
+    //LATER support n.Count() > 2
+    private: struct VFIterator final
+    {
+        VFIterator(List<FFDNode *> n)
+            : Ht{static_cast<List<FFDNode *> &&>(n)}
+        {
+            // "hash_table", "keys"
+            // "field"
+            FFD_ENSURE(Ht.Count () > 0 && Ht.Count () < 3,
+                "VFIterator: odd number of nodes")
+            Dbg << "VFIterator: Table(s):" << EOL;
+            for (int i = 0; i < Ht.Count (); i++) {
+                Dbg << "  ht[" << i << "]: "
+                    << Ht[i]->FieldNode ()->Base->Name << "."
+                    << Ht[i]->FieldNode ()->Name << EOL << "  ";
+                    Ht[i]->FieldNode ()->DbgPrint ();
+            }
+            if (1 == n.Count ()) { // 1 node that directly resolves to string
+                Dbg << "VFIterator: single field" << EOL;
+                return;
+            }
+            Count = Ht[1]->NodeCount ();
+            Dbg << "VFIterator: ltop layer keys: " << Count << EOL;
+        }
+        int Index{}; //
+        int Count{}; // Ht[1]->Count
+        int Key{};  // Ht[1]->AsArr()[Index++]
+        List<FFDNode *> Ht{}; // 1. Ht[0]->_fields[Key]
+                              // 2. Ht[0]->AsString()
+        inline String ResolveToString()
+        {
+            Dbg << "VFIterator: ResolveToString" <<  Ht.Count () << EOL;
+            if (1 == Ht.Count ()) return Ht[0]->AsString ();
+            else {
+                FFD_ENSURE(Index < Count-1, "VFIterator: overflow")
+                int key = Ht[1]->IntArrElementAt (Index++);
+                //TODO fix AsString() to use appropriate field based on [Text]
+                Dbg << "VFIterator: key: " << key << ", " << "val: "
+                    << Ht[0]->_fields[key]->_fields[0]->AsString () << EOL;
+                return Ht[0]->_fields[key]->_fields[0]->AsString ();
+            }
+        }
+    };// VFIterator
+    //TODO GetVFIterator(List<FFDNode *> &)
+    private: List<VFIterator> _vfi_list {};
 };// FFDNode
 
 NAMESPACE_FFD

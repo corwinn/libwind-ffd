@@ -557,37 +557,13 @@ void FFDNode::FromStruct(FFD::SNode * sn)
                         FFD_ENSURE(fn->_array, "  ++var: non-array ht.")
                         ht.Add (fn);
                     }
-                    Dbg << "  ++var: Table(s):" << EOL;
-                    for (int i = 0; i < ht.Count (); i++) {
-                        Dbg << "  ++var:   ht[" << i << "]: "
-                            << ht[i]->FieldNode ()->Base->Name << "."
-                            << ht[i]->FieldNode ()->Name << EOL << "  ";
-                                ht[i]->FieldNode ()->DbgPrint ();
-                    }
-                    FFD_ENSURE(2 == ht.Count (), "TODO m-hash not impl. yet")
-                    int k = ht.Count () - 1; //TODO use a stack
-                    /*Dbg << ht[k]->FieldNode ()->DType->IsMachType () << ", "
-                        << ht[k]->FieldNode ()->DType->Size << " bytes, arr["
-                        << ht[k]->FieldNode ()->ArrDims () << "], fp: "
-                        << ht[k]->FieldNode ()->DType->Fp << EOL;*/
-                    FFD_ENSURE(ht[k]->FieldNode ()->DType->IsIntType (),
-                        "  ++var: nth-layer ht is not an int array.")
-                    FFD_ENSURE(2 == ht[k]->_array_item_size,
-                        "  ++var: unsupp. int size")
-                    const auto * foo = ht[k]->AsArr<unsigned short> ();
-                    for (int i = 0; i < ht[k]->_data.Length () / 2; i++) {
-                        Dbg << "key: " << foo[i] << ", " << "val: "
-                            // SizedString              . Value
-                            //LATER [Text] should specify field (implicit 0)
-                            << ht[k-1]->_fields[foo[i]]->_fields[0]->AsString ()
-                            << EOL;
-                        auto em_node = FieldNode ()->NodeByName (//TODO Root->NN
-                            ht[k-1]->_fields[foo[i]]->_fields[0]->AsString ());
-                        FFD_ENSURE(em_node != nullptr, "  ++var: not found")
-                        em_node->DbgPrint ();
-                        FromStruct (em_node);
-                        break;
-                    }
+                    if (_vfi_list.Empty ())//TODO see GetVFIterator
+                        _vfi_list.Add (VFIterator {ht});
+                    auto em_node = FieldNode ()->NodeByName (
+                        _vfi_list[0].ResolveToString ());
+                    FFD_ENSURE(em_node != nullptr, "  ++var: not found")
+                    em_node->DbgPrint ();
+                    FromStruct (em_node);
                     continue;
                 }// if (FFD_STRUCT_BY_NAME == names[0])
                 for (int i = 0; i < names.Count (); i++) { // ... hk.field
