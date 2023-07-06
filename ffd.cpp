@@ -202,9 +202,12 @@ bool FFD::SNode::ParseStruct(FFDParser & parser)
         SNode * node;
         FFD_CREATE_OBJECT(node, FFD::SNode) {};
         node->Base = this;
-        Fields.Add (node);
-        if (! node->ParseField (parser)) // it skips its EOL if any
-            return false;
+        bool b = node->ParseField (parser), a = b && (! node->IsComment ());
+        if (a) Fields.Add (node);
+        else {
+            FFD_DESTROY_NESTED_OBJECT(node, FFD::SNode, SNode)
+            if (! b) return false;
+        }
         // if (parser.HasMoreData ())
         //    Dbg << "done reading a field. " << parser.Tell () << ":"
         //        << Dbg.Fmt (%002X, *(parser.BufAt (parser.Tell ()))) << EOL;
@@ -257,8 +260,9 @@ bool FFD::SNode::ParseField(FFDParser & parser)
     // Either a symbol or a comment
     while (parser.IsComment ()) { // multi-one-line comments
         parser.SkipCommentWhitespaceSequence ();
-        if (! parser.HasMoreData ()) return true; // {comment}{EOL}{EOF}
-        if (parser.IsEol ()) return true;
+        // {comment}{EOL}{EOF} || {comment}{EOL}{EOL}
+        if (! parser.HasMoreData () || parser.IsEol ()) // dangling comment
+            return Type = FFD::SType::Comment, true;
         parser.SkipLineWhitespace ();
     }
     // What is it? "type<>type[] symbol" or "typeEOL" or "type " or "..."

@@ -260,6 +260,7 @@ class FFD_EXPORT FFD
             return (IsMachType () || IsEnum () || IsIntConst ())
                 && (Size >= 1 && Size <= 4);
         }
+        public: inline bool IsComment() const { return SType::Comment == Type; }
         // By value. Allow many attributes for custom extensions.
         public: SNode * GetAttr(const String & query)
         {
