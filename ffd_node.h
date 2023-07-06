@@ -201,6 +201,10 @@ class FFDNode
         }
         return result;
     }
+    public: template <typename T> inline const T * AsArr() const
+    {
+        return reinterpret_cast<T *>(_data.operator byte * ());
+    }
 
     struct ExprCtx final // required to evaluate enum elements in expression.
     {

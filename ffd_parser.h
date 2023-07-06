@@ -53,6 +53,7 @@ FFD_NAMESPACE
 #define FFD_MAX_ENUM_ITEMS 96
 #define FFD_MAX_ARR_EXPR_LEN 32
 #define FFD_MAX_ARR_DIMS 3
+#define FFD_STRUCT_BY_NAME "struct"
 
 // [bytes] these are intended to be small; for larger ones use arrays.
 #define FFD_MAX_MACHTYPE_SIZE 128
