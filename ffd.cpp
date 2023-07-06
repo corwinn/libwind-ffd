@@ -642,18 +642,8 @@ FFDNode * FFD::File2Tree(Stream & fh2)
 {
     Stream * s {&fh2};
     FFDNode * data_root {};
-    auto sentinel = Dbg.Enabled;
-        Dbg.Enabled = true;
-        // Dbg << "Parsing " << f << EOL;
-    Dbg.Enabled = sentinel;
     FFD_CREATE_OBJECT(data_root, FFDNode) {_root, s};
-    // Dbg << "Parsed " << f << EOL;
-    // data_root->PrintTree ();
-    // sentinel = Dbg.Enabled;
-        // Dbg.Enabled = true;
-        Dbg << "uncompressed stream s: " << s->Tell () << "/" << s->Size ()
-            << EOL;
-    // Dbg.Enabled = sentinel;
+    Dbg << "uncompressed stream s: " << s->Tell () << "/" << s->Size () << EOL;
     return data_root;
 }
 void FFD::FreeNode(FFDNode * n) { FFD_DESTROY_OBJECT(n, FFDNode) }
