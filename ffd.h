@@ -253,8 +253,7 @@ class FFD_EXPORT FFD
         {
             return IsMachType () || IsEnum ();
         }
-        // 32 bit int, mind you; also include the ! Fp, when floating-point
-        // types come around
+        // 32 bit int, mind you
         public: inline bool IsIntType() const
         {
             return (IsMachType () || IsEnum () || IsIntConst ())
