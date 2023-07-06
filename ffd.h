@@ -258,7 +258,7 @@ class FFD_EXPORT FFD
         public: inline bool IsIntType() const
         {
             return (IsMachType () || IsEnum () || IsIntConst ())
-                && (Size >= 1 && Size <= 4);
+                && (Size >= 1 && Size <= 4) && ! Fp;
         }
         public: inline bool IsComment() const { return SType::Comment == Type; }
         // By value. Allow many attributes for custom extensions.
