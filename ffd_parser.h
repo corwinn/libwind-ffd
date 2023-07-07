@@ -108,8 +108,8 @@ class FFDParser
             if (IsEol ()) { _line++; _column = 0; }
             _i++; _column++;
         }
-        auto parser = *this;
         // printf ("%3d: read_%s    : [%5d;%5d]" EOL, _line, txt, j, _i);
+        auto parser = *this; // this is used by FFD_ENSURE_FFD
         FFD_ENSURE_FFD(_i > j, "Empty read_while")
     }
     public: void ReadNonWhiteSpace();
