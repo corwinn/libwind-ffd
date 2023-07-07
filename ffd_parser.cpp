@@ -165,9 +165,70 @@ static inline bool is_upper(byte b)
     return (b >= 'A' && b <= 'Z');
 }
 
+/*static*/ bool FFDParser::IsIntLiteral(const byte * buf, int len)
+{
+    int i{};
+    while ((len > 0 ? i < len : buf[i]))
+        if (is_decimal_number (buf[i])) i++;
+        else return false;
+    return i > 0;
+}
+
+/*static*/ bool FFDParser::IsIntLiteral(const String & s)
+{
+    return IsIntLiteral (
+        reinterpret_cast<const byte *>(s.AsZStr ()), s.Length ());
+}
+
+/*static*/ int FFDParser::ToInt(const String & s)
+{
+    int foo{};
+    return FFDParser::ParseIntLiteral (
+        reinterpret_cast<const byte *>(s.AsZStr ()), s.Length (), foo);
+}
+
+//TODO testme
+/*static*/ int FFDParser::ParseIntLiteral(const byte * buf, int len,
+    int & reuse)
+{
+    static int const N[16] {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    int result = 1, i = 0; bool h = false;
+    if ('-' == buf[i]) { result = -1; i++; }
+    else if ('0' == buf[i] && i+1 < len && 'x' == buf[i+1]) {
+        i += 2;
+        h = true;
+    }
+    // 123 = 3*(10^0) + 2*(10^1) + 1*(10^2)
+    // 1ff = f*(16^0) + f*(16^1) + 1*(16^2)
+    FFD_ENSURE(i < len, "Incomplete integer literal") // -EOF
+    // integer: nnnnnnnnnn; hexadecimal int: nnnnnnnn
+    int j = i, tmp_result = 0;
+    if (h) {
+        while (i < len && is_hexadecimal_number (buf[i])) i++;
+        FFD_ENSURE(i - j <= 8, "Integer literal too long")
+        for (int k = i-1, p = 1; k >= j; k--, p *= (k >= j ? 16 : 1)) {
+            int number = is_decimal_number (buf[k]) ? buf[k] - '0'
+                : 10 + buf[k] - (is_upper (buf[k]) ? 'A' : 'a');
+            tmp_result += N[number] * p;
+        }
+    }
+    else {
+        while (i < len && is_decimal_number (buf[i])) i++;
+        FFD_ENSURE(i - j <= 10, "Integer literal too long")
+        for (int k = i-1, p = 1; k >= j; k--, p *= 10)
+            tmp_result += N[buf[k] - '0'] * p;
+    }
+    return reuse = i, result * tmp_result;
+}// FFDParser::ParseIntLiteral()
+
 //TODO testme
 int FFDParser::ParseIntLiteral()
 {
+#ifndef FFD_PARSERER_INT_LITERAL_DETAILS
+    int len{};
+    int result = ParseIntLiteral (_buf+_i, _len-_i, len);
+    return _i += len, result;
+#else
     static int const N[16] {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
     int result = 1; bool h = false;
     if ('-' == _buf[_i]) { result = -1; _i++; }
@@ -197,6 +258,7 @@ int FFDParser::ParseIntLiteral()
             tmp_result += N[_buf[k] - '0'] * p;
     }
     return result * tmp_result;
+#endif
 }// FFDParser::ParseIntLiteral()
 
 // Multi-line not handled.

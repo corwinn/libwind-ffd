@@ -119,6 +119,11 @@ class FFDParser
     public: String ReadSymbol(char stop_at = '\0', bool allow_dot = false);
     public: List<String> TokenizeUntilWhiteSpace(const char * d);
     public: int ParseIntLiteral();
+    public: static int ParseIntLiteral(const byte *, int, int &);
+    // 32-bit max
+    public: static bool IsIntLiteral(const byte *, int); // "" yields false
+    public: static bool IsIntLiteral(const String &);
+    public: static int ToInt(const String &);
     public: String ReadExpression(char open, char close);
     public: void SkipCommentWhitespaceSequence();
 
