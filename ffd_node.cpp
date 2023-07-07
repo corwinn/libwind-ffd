@@ -466,13 +466,7 @@ void FFDNode::FromField()
         int unused {};
         bool resolve_only {true};
         Dbg << " Resolving " << _n->DTypeName << EOL;
-        if (! FieldNode ()->Parametrized ())
-            _n->DType = ResolveSNode (_n->DTypeName, unused, _n, resolve_only);
-        else {
-            Dbg << " Resolving parametrized " << _n->DTypeName << EOL;
-            for (int i = 0; i < FieldNode ()->PS.Count (); i++)
-                Dbg << "  p[0] = " << FieldNode ()->PS[0].Name << EOL;
-        }
+        _n->DType = ResolveSNode (_n->DTypeName, unused, _n, resolve_only);
     }
     FFD_ENSURE(nullptr != _n->DType, "field->DType can't be null")
 
@@ -532,6 +526,27 @@ void FFDNode::FromStruct(FFD::SNode * sn)
         if (n->HasExpr () && ! EvalBoolExpr (n, this)) {
             Dbg << " Eval: false: " << n->Name << EOL;
             continue;
+        }
+        Dbg << "<><> " << (n->DType != nullptr) << ", " << n->Parametrized () << EOL;
+        if (! n->DType && FieldNode ()->Parametrized ()) {
+            Dbg << "<><> FieldNode: " << FieldNode ()->Name << EOL;
+            FieldNode ()->DbgPrint ();
+            Dbg << "<><> Resolving parametrized " << n->DTypeName << EOL;
+            for (int i = 0; i < FieldNode ()->PS.Count (); i++)
+                Dbg << "  p[0] = " << FieldNode ()->PS[i].Name << EOL;
+            FFD_ENSURE(FieldNode ()->DType->Parametrized (),
+                "the PS isn't parametrized?!")
+            Dbg << "<><> PS Names: " << EOL;
+            int key{-1};
+            for (int i = 0; i < FieldNode ()->DType->PS.Count (); i++) {
+                Dbg << "  p[0] = " << FieldNode ()->DType->PS[i].Name << EOL;
+                if (n->DTypeName == FieldNode ()->DType->PS[i].Name) {
+                    key = i; break;
+                }
+            }
+            FFD_ENSURE(key >= 0, "Unknown PS param")
+            n->DType = n->Base->NodeByName (FieldNode ()->PS[key].Name);
+            FFD_ENSURE(nullptr != n->DType, "Create the parametrized DType")
         }
         if (n->DType && n->DType->IsStruct ()) {
             if (n->Composite) {
