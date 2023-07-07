@@ -182,6 +182,7 @@ class String
     }
     public: bool operator==(const char * v) const { return _.operator== (v); }
     public: const char * AsZStr() const { return _.AsZStr (); }
+    public: int Length() const { return _.Length (); } // [bytes]
     // Return 1 token when the delimiter isn't found.
     public: List<String> Split(char d) { return _.Split (d); }
     private: FFD_STRING_IMPL(List<String>) _;

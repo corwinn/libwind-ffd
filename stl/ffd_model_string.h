@@ -73,6 +73,7 @@ template <typename T> class MyString final
         return true;
     }
     public: const char * AsZStr() const { return _p.c_str (); }
+    public: int Length() const { return static_cast<int>(_p.size ()); }
     public: T Split(char d) // List<String>
     {
         T r {};
