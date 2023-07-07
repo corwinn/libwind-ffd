@@ -174,8 +174,11 @@ bool FFD::SNode::ParseStruct(FFDParser & parser)
         parser.SetCurrent (p); //TODO come on
         s = parser.TokenizeUntilWhiteSpace ("<>,");
         Name = s[0];
-        Dbg << "parametrized: \"" << s[1] << "\"";
-        for (int i = 2; i < s.Count (); i++) Dbg << ", \"" << s[i] << "\"";
+        Dbg << "parametrized: \"";
+            PS.Add (PSParam {static_cast<String &&>(s[1])}); Dbg <<  "\"";
+        for (int i = 2; i < s.Count (); i++)
+            Dbg << ", \"", PS.Add (PSParam {static_cast<String &&>(s[i])}),
+                Dbg << "\"";
     } else {
         parser.SetCurrent (p); //TODO come on
 //np ReadSymbol (stop_at: ':', allow_dot: true);
@@ -203,7 +206,13 @@ bool FFD::SNode::ParseStruct(FFDParser & parser)
         FFD_CREATE_OBJECT(node, FFD::SNode) {};
         node->Base = this;
         bool b = node->ParseField (parser), a = b && (! node->IsComment ());
-        if (a) Fields.Add (node);
+        if (a) {
+            Fields.Add (node);
+            if (Fields.Count () > 1) {
+                Fields[Fields.Count ()-2]->Next = Fields[Fields.Count ()-1];
+                Fields[Fields.Count ()-1]->Prev = Fields[Fields.Count ()-2];
+            }
+        }
         else {
             FFD_DESTROY_NESTED_OBJECT(node, FFD::SNode, SNode)
             if (! b) return false;
@@ -535,28 +544,6 @@ List<FFD::SNode *> FFD::SNode::NodesByName(const String & query)
     return static_cast<List<FFD::SNode *> &&>(result);
 }
 
-// Debug purposes
-void FFD::SNode::DbgPrint()
-{
-    Dbg << "+" << TypeToString () << ": ";
-    if (HashKey) Dbg << "[hk;HashType:" << HashType << "]";
-    if (Array) Dbg << "[arr]";
-    if (Variadic) Dbg << "[var]";
-    if (VListItem) Dbg << "[vli]";
-    if (Composite) Dbg << "[comp]";
-    if (Signed) Dbg << "[signed]";
-    if (IsAttribute ())
-        Dbg << " Value: \"" << Attribute << "\"";
-    else
-        Dbg << " Name: \"" << Name << "\"";
-    Dbg << ", DType: \"";
-    if (nullptr == DType) {
-        if (! NoDType ())
-            Dbg << "unresolved:" << DTypeName;
-    }
-    else Dbg << DType->Name;
-    Dbg << "\"" << EOL;
-}
 static void print_tree(FFD::SNode * n)
 {
     if (nullptr == n) {
@@ -583,6 +570,16 @@ void FFD::SNode::ResolveTypes()
     if (DTypeName.Empty ()) {
         Dbg << "neither dtype nor dtypename: \"" << Name << "\"" << EOL;
         return;
+    }
+    auto ps =  DTypeName.Split ('<'); // TODO implement the multi-delim. one
+    if (ps.Count () > 1) { // parametrized struct TODO 1000 checks
+        DTypeName = ps[0]; // point to the parametrized struct
+        Dbg << " FieldSNode<>" << Base->Name << "." << Name << ": resolving "
+            << DTypeName << EOL;
+        ps = ps[1].Split ('>');
+        ps = ps[0].Split (',');
+        for (int i = 0; i < ps.Count (); i++)
+            Dbg << "  - ", PS.Add ({static_cast<String &&>(ps[i]), this});
     }
     DType = Base ? Base->NodeByName (DTypeName)
         : NodeByName (DTypeName);

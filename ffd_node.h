@@ -438,6 +438,13 @@ class FFDNode
     };// VFIterator
     //TODO GetVFIterator(FFDNode * client)
     private: List<VFIterator> _vfi_list {};
+
+    // Parametrized struct
+    public: struct PSParam final
+    {
+        int Value;
+    };// PSParam
+    public: List<PSParam> PS{}; // parametrized struct
 };// FFDNode
 
 NAMESPACE_FFD

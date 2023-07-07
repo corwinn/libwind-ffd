@@ -466,7 +466,13 @@ void FFDNode::FromField()
         int unused {};
         bool resolve_only {true};
         Dbg << " Resolving " << _n->DTypeName << EOL;
-        _n->DType = ResolveSNode (_n->DTypeName, unused, _n, resolve_only);
+        if (! FieldNode ()->Parametrized ())
+            _n->DType = ResolveSNode (_n->DTypeName, unused, _n, resolve_only);
+        else {
+            Dbg << " Resolving parametrized " << _n->DTypeName << EOL;
+            for (int i = 0; i < FieldNode ()->PS.Count (); i++)
+                Dbg << "  p[0] = " << FieldNode ()->PS[0].Name << EOL;
+        }
     }
     FFD_ENSURE(nullptr != _n->DType, "field->DType can't be null")
 

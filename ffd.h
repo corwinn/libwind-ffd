@@ -284,7 +284,39 @@ class FFD_EXPORT FFD
             };
         }
         public: inline bool HasExpr() const { return Expr.Count () > 0; }
-        public: void DbgPrint();
+        public: inline void DbgPrint()
+        {
+            Dbg << "+" << TypeToString () << ": ";
+            if (HashKey) Dbg << "[hk;HashType:" << HashType << "]";
+            if (Array) Dbg << "[arr]";
+            if (Variadic) Dbg << "[var]";
+            if (VListItem) Dbg << "[vli]";
+            if (Composite) Dbg << "[comp]";
+            if (Signed) Dbg << "[signed]";
+            if (IsAttribute ()) Dbg << " Value: \"" << Attribute << "\"";
+            else {
+                Dbg << " Name: \"" << Name;
+                    if (IsStruct ()) DbgPrintPS (); Dbg << "\"";
+            }
+            Dbg << ", DType: \"";
+            if (nullptr == DType) {
+                if (! NoDType ())
+                    Dbg << "unresolved:" << DTypeName;
+            }
+            else Dbg << DType->Name;
+            if (IsField ()) DbgPrintPS ();
+            Dbg << "\"" << EOL;
+        }
+        public: inline void DbgPrintPS() // parametrized struct details
+        {
+            if (Parametrized ()) {
+                Dbg << "<";
+                Dbg << PS[0].Name;
+                    for (int i = 1; i < PS.Count (); i++)
+                        Dbg << ", " << PS[i].Name;
+                Dbg << ">";
+            }
+        }
         // where there are no dynamic arrays and expressions
         public: int PrecomputeSize()
         {
@@ -312,6 +344,42 @@ class FFD_EXPORT FFD
             }
             return result;
         }// PrecomputeSize()
+        public: enum class PSType {Type, Field, IntLiteral};
+        public: struct PSParam final
+        {
+            PSParam(String && name, FFD::SNode * field = nullptr)
+                : Name {name}
+            {
+                Dbg << "SNode::PSParam: " << name;
+                if (nullptr == field) { Dbg << EOL; return; }
+                FFD_ENSURE(field->IsField (), "Only fields can set that")
+                if (FFDParser::IsIntLiteral (Name)) {
+                    Type = PSType::IntLiteral;
+                    Value = FFDParser::ToInt (Name);
+                    Dbg << " - intlit: " << Value << EOL;
+                    return;
+                }
+                FFD::SNode * f{};
+                field->WalkBackwards ([&](SNode * n) {
+                    auto keep_walking = Name != n->Name;
+                    if (! keep_walking) f = n;
+                    return keep_walking;
+                });
+                if (f) {
+                    Type = FFD::SNode::PSType::Field;
+                    // Value set at the instance node at its PS != this PS
+                    Dbg << " - instance field: " << Name << EOL;
+                    return;
+                }
+                Type = FFD::SNode::PSType::Type;
+                Dbg << " - type: " << Name << EOL;
+            }
+            PSType Type;
+            String Name;
+            int Value; // if Name contains int. literal
+        };// PSParam
+        public: List<PSParam> PS{}; // parametrized struct
+        public: bool Parametrized() const { return ! PS.Empty (); }
     };// SNode
 
     private: SNode * _root {};
