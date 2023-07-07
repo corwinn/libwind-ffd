@@ -32,6 +32,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 **** END LICENCE BLOCK ****/
 
+// while(theres_data).read(how_many).put_it(where)
+
 #ifndef _FFD_NODE_H_
 #define _FFD_NODE_H_
 
@@ -403,6 +405,12 @@ class FFDNode
                     Ht[i]->FieldNode ()->DbgPrint ();
             }
             if (1 == n.Count ()) { // 1 node that directly resolves to string
+                //TODO
+                //this is the case but only when Ht[0] is resolvable to string:
+                //  String Name
+                //  ... struct.Name <- is this the correct syntax?
+                //  ... Name <- looks more appropriate
+                // what happens if it is a non-local array of strings?
                 Dbg << "VFIterator: single field" << EOL;
                 return;
             }
@@ -428,7 +436,7 @@ class FFDNode
             }
         }
     };// VFIterator
-    //TODO GetVFIterator(List<FFDNode *> &)
+    //TODO GetVFIterator(FFDNode * client)
     private: List<VFIterator> _vfi_list {};
 };// FFDNode
 
