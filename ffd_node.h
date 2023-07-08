@@ -431,7 +431,8 @@ class FFDNode
                 int key = Ht[1]->IntArrElementAt (Index++);
                 //TODO fix AsString() to use appropriate field based on [Text]
                 Dbg << "VFIterator: key: " << key << ", " << "val: "
-                    << Ht[0]->_fields[key]->_fields[0]->AsString () << EOL;
+                    << Ht[0]->_fields[key]->_fields[0]->AsString ()
+                    << " at Index: " << Index-1 << EOL;
                 return Ht[0]->_fields[key]->_fields[0]->AsString ();
             }
         }

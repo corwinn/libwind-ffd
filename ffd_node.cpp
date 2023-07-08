@@ -164,6 +164,9 @@ FFD::SNode * FFDNode::ResolveSNode(const String & n, int & value,
                     FFD_ENSURE(sym->Size >= 1 && sym->Size <= 4,
                         "Can't handle that size")
                     int avalue {};
+                    Dbg << "  ResolveSNode: implicit symbol, reading "
+                        << sym->Size << " byte" << (sym->Size > 1 ? "s" : "")
+                        << EOL;
                     _s->Read (&avalue, sym->Size);//TODO create FFDNode for it
                     return value = avalue, sym;
                 }
@@ -578,10 +581,13 @@ void FFDNode::FromStruct(FFD::SNode * sn)
                         FFD_ENSURE(fn->_array, "  ++var: non-array ht.")
                         ht.Add (fn);
                     }
-                    if (_vfi_list.Empty ())//TODO see GetVFIterator
-                        _vfi_list.Add (VFIterator {ht});
+                    //TODO what if _base->_base is the array, etc. refactor
+                    //     to handle tree iterator
+                    FFD_ENSURE(_base->_array, "can't iterate over non-array")
+                    if (_base->_vfi_list.Empty ())//TODO see GetVFIterator
+                        _base->_vfi_list.Add (VFIterator {ht});
                     auto em_node = FieldNode ()->NodeByName (
-                        _vfi_list[0].ResolveToString ());
+                        _base->_vfi_list[0].ResolveToString ());
                     FFD_ENSURE(em_node != nullptr, "  ++var: not found")
                     em_node->DbgPrint ();
                     FromStruct (em_node);
