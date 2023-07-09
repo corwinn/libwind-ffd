@@ -525,7 +525,8 @@ void FFDNode::FromStruct(FFD::SNode * sn)
 
     for (auto n : sn->Fields) {
         FFDNode * f {};
-        Dbg << "<> " << sn->Name << "." << n->Name << EOL;
+        Dbg << "<> " << sn->Name << "." << n->Name
+            << Dbg.Fmt (" offset: %000000008X", _s->Tell ()) << EOL;
         if (n->HasExpr () && ! EvalBoolExpr (n, this)) {
             Dbg << " Eval: false: " << n->Name << EOL;
             continue;
