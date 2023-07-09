@@ -337,7 +337,7 @@ class FFD_EXPORT FFD
                             arr_result *= f->Arr[i].Value;
                     }
                     FFD_ENSURE(i > 0, "array node w/o dimensions?")
-                    result += arr_result;
+                    result += arr_result * f->DType->Size;
                 }
                 else
                     result += f->DType->Size;
