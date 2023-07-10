@@ -380,8 +380,23 @@ class FFD_EXPORT FFD
             String Name;
             String Bind; // param name bound to field name (at Name)
             int Value; // if Name contains int. literal
+            inline void DbgPrint()
+            {
+                Dbg << "Name: " << Name << ", Type: ";
+                switch (Type) {
+                    case FFD::SNode::PSType::Type: Dbg << "type"; break;
+                    case FFD::SNode::PSType::Field: Dbg << "field"; break;
+                    case FFD::SNode::PSType::IntLiteral: Dbg << "ilit"; break;
+                }
+                Dbg << ", Bound to: \"" << Bind << "\"";
+            }
         };// PSParam
         public: List<PSParam> PS{}; // parametrized struct
+        public: inline void PSDbgPrint()
+        {
+            for (int i = 0; i < PS.Count (); i++)
+                Dbg << "PS[" << i << "]: ", PS[i].DbgPrint (), Dbg << EOL;
+        }
         public: bool Parametrized() const { return ! PS.Empty (); }
     };// SNode
 
