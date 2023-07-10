@@ -514,12 +514,6 @@ void FFDNode::FromStruct(FFD::SNode * sn)
     bool don_use_f = sn != nullptr;
     if (! sn) sn = _n; // temporary: allows for the recursive detour below
 
-    // handled below at for (auto n : sn->Fields) {
-    /*if (sn->VListItem) {
-        Dbg << "FFD::Node::FromStruct: parse the ValueList" << EOL;
-        return;
-    }*/
-
     //TODO really, remove that recursive nice-mountain-view
     if (_f) Dbg << " field " << _f->Name << " ";
     Dbg << "struct lvl " << _level << ": "  << sn->Name << EOL;
@@ -537,7 +531,6 @@ void FFDNode::FromStruct(FFD::SNode * sn)
             Dbg << " Eval: false: " << n->Name << EOL;
             continue;
         }
-        Dbg << "<><> " << (n->DType != nullptr) << ", " << n->Parametrized () << EOL;
         if (! n->DType && FieldNode ()->Parametrized ()) {
             Dbg << "<><> FieldNode: " << FieldNode ()->Name << EOL;
             FieldNode ()->DbgPrint ();
