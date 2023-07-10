@@ -208,6 +208,23 @@ void FFDNode::ResolveSymbols(ExprCtx & ctx, FFD::SNode * sn, FFDNode * base)
     if (base) { // FFDNode
         Dbg << "   FFDNode::ResolveSymbols: looking at "
             << base->FieldNode ()->Name << EOL;
+        // handle PS field params
+        if (base->_base && base->_base->_array) { // array node
+            //TODO non-array _base
+            auto snode = base->_base->FieldNode ();
+            Dbg << "base->_base->FieldNode ()->Parametrized (): "
+                << snode->Parametrized () << EOL;
+            if (snode->Parametrized ()) {
+                snode->PSDbgPrint ();
+                for (int i = 0; i < snode->PS.Count (); i++)
+                    if (snode->PS[i].IsField ()) {
+                        if (ctx.LSymbol == snode->PS[i].Bind)
+                            ctx.LSymbol = snode->PS[i].Name;
+                        if (ctx.RSymbol == snode->PS[i].Bind)
+                            ctx.RSymbol = snode->PS[i].Name;
+                    }
+            }
+        }
         FFDNode * lsym {}, * rsym {};
         if (! ctx.LSymbol.Empty ()) {
             auto arr = static_cast<List<String> &&>(ctx.LSymbol.Split ('.'));
@@ -535,8 +552,7 @@ void FFDNode::FromStruct(FFD::SNode * sn)
             Dbg << "<><> FieldNode: " << FieldNode ()->Name << EOL;
             FieldNode ()->DbgPrint ();
             Dbg << "<><> Resolving parametrized " << n->DTypeName << EOL;
-            for (int i = 0; i < FieldNode ()->PS.Count (); i++)
-                Dbg << "  p[0] = " << FieldNode ()->PS[i].Name << EOL;
+            FieldNode ()->PSDbgPrint ();
             FFD_ENSURE(FieldNode ()->DType->Parametrized (),
                 "the PS isn't parametrized?!")
             Dbg << "<><> PS Names: " << EOL;
