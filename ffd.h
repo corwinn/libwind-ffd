@@ -331,7 +331,7 @@ class FFD_EXPORT FFD
                         if (! f->Arr[i].Name.Empty ()) {
                             auto n = NodeByName (f->Arr[i].Name);
                             if (n && ! n->IsIntConst ()) return 0;
-                            arr_result *= n->IntLiteral;
+                            if (n) arr_result *= n->IntLiteral;
                         }
                         else
                             arr_result *= f->Arr[i].Value;
