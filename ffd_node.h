@@ -451,7 +451,7 @@ class FFDNode
             Dbg << "VFIterator: ResolveToString" <<  Ht.Count () << EOL;
             if (1 == Ht.Count ()) return Ht[0]->AsString ();
             else {
-                FFD_ENSURE(Index < Count-1, "VFIterator: overflow")
+                FFD_ENSURE(Index < Count, "VFIterator: overflow")
                 int key = Ht[1]->IntArrElementAt (Index++);
                 //TODO fix AsString() to use appropriate field based on [Text]
                 Dbg << "VFIterator: key: " << key << ", " << "val: "
