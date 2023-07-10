@@ -377,12 +377,36 @@ class FFDNode
         FFD_ENSURE(dt != nullptr, "IntArrElementAt: DType can't be null")
         FFD_ENSURE(dt->IsIntType (), "IntArrElementAt: not an int array")
         switch (dt->Size) {//TODO <size: size_t, signed: bool> to Type
-            case 1: return AsArr<byte> ()[index]; break;
+            case 1: return AsArr<byte> ()[index];
             case 2: return dt->Signed ? AsArr<short> ()[index]
                 : AsArr<unsigned short> ()[index];
             case 4: return dt->Signed ? AsArr<int>()[index]
                 : AsArr<unsigned int>()[index];
             default: FFD_ENSURE(0, "IntArrElementAt: unhandled DType->Size")
+        }
+    }
+    //TODO not the best variant, but should do prior the Arr API
+    public: template<typename T> inline int AASum(T a, int n)
+    {
+        int r{};
+        for (int i = 0; i < n; r+=static_cast<int>(a[i++]))
+            ;
+        return r;
+    }
+    public: inline int IntArrElementSum() //TODO Arr API
+    {
+        auto dt = FieldNode ()->DType;
+        FFD_ENSURE(dt != nullptr, "IntArrElementSum: DType can't be null")
+        FFD_ENSURE(dt->IsIntType (), "IntArrElementSum: not an int array")
+        switch (dt->Size) {//TODO <size: size_t, signed: bool> to Type
+            case 1: return AASum (AsArr<byte> (), NodeCount ());
+            case 2: return dt->Signed
+                ? AASum (AsArr<short> (), NodeCount ())
+                : AASum (AsArr<unsigned short> (), NodeCount ());
+            case 4: return dt->Signed
+                ? AASum (AsArr<int>(), NodeCount ())
+                : AASum (AsArr<unsigned int>(), NodeCount ());
+            default: FFD_ENSURE(0, "IntArrElementSum: unhandled DType->Size")
         }
     }
 

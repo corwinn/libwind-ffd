@@ -327,8 +327,10 @@ void FFDNode::EvalArray()
     Dbg << " +field, array of " << n->DType->Name << EOL;
     // array size
     int arr_size {}, final_size {1};
+    bool ja {false};
     for (int i = 0; i < FFD_MAX_ARR_DIMS; i++) {
         if (n->Arr[i].None ()) break;
+        FFD_ENSURE(! ja, "implement me: jagged array of jagged arrays")
         Dbg << " ++dim type: "; n->Arr[i].DbgPrint (); Dbg << EOL;
         // Is it an implicit machine type?
         if (! n->Arr[i].Name.Empty ()) { // [{symbol}]
@@ -368,15 +370,19 @@ void FFDNode::EvalArray()
                 auto node = NodeByName (n->Arr[i].Name);
                 FFD_ENSURE(nullptr != node, "Arr. dim. not found")
                 if (node->_array) {
-                    Dbg << "Implement me: jagged arrays" << EOL;
-                    return;
+                    ja = true;
+                    Dbg << "[j] item size: " << node->_array_item_size << EOL;
+                    arr_size = 1, final_size = node->IntArrElementSum ();
+                    Dbg << "[j] total items: " << arr_size << EOL;
                 }
+                else {
                 FFD_ENSURE(node->_n->IsField (), "Unsupported arr. dim.")
                 m = node->_n->DType;
                 FFD_ENSURE(m->IsValidArrDim (), "Unsupported arr. dim.")
                 FFD_ENSURE(m->Size >= 0 && m->Size <= 4, "Arr. dim. overflow")
                 arr_size = node->AsInt ();
                 Dbg << " ++dim size (ffdnode): " << arr_size << " items" << EOL;
+                }
             }
         }// ! n->Arr[i].Name.Empty ()
         else if (n->Arr[i].Value < 0) { // "-key" - read until "key"
