@@ -578,8 +578,13 @@ void FFD::SNode::ResolveTypes()
             << DTypeName << EOL;
         ps = ps[1].Split ('>');
         ps = ps[0].Split (',');
+        auto foo = Base->NodeByName (DTypeName); // because this is a field?
+        //TODO - Root->NodeByName - I'm looking for a type here; and types are
+        //       root sub-nodes; or even better: TypeByName ()
+        //TODO what happens if !Base, and if DTypeName.Empty()?
         for (int i = 0; i < ps.Count (); i++)
-            Dbg << "  - ", PS.Add ({static_cast<String &&>(ps[i]), this});
+            Dbg << "  - ", PS.Add ({static_cast<String &&>(ps[i]), this,
+                static_cast<String &&>(foo ? foo->PS[i].Name : "")});
     }
     DType = Base ? Base->NodeByName (DTypeName)
         : NodeByName (DTypeName);

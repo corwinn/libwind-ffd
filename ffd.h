@@ -347,8 +347,9 @@ class FFD_EXPORT FFD
         public: enum class PSType {Type, Field, IntLiteral};
         public: struct PSParam final
         {
-            PSParam(String && name, FFD::SNode * field = nullptr)
-                : Name {name}
+            PSParam(String && name, FFD::SNode * field = nullptr,
+                String && b = "")
+                : Name {name}, Bind {b}
             {
                 Dbg << "SNode::PSParam: " << name;
                 if (nullptr == field) { Dbg << EOL; return; }
@@ -368,7 +369,8 @@ class FFD_EXPORT FFD
                 if (f) {
                     Type = FFD::SNode::PSType::Field;
                     // Value set at the instance node at its PS != this PS
-                    Dbg << " - instance field: " << Name << EOL;
+                    Dbg << " - instance field: " << Name << " bound to " << Bind
+                        << EOL;
                     return;
                 }
                 Type = FFD::SNode::PSType::Type;
@@ -376,6 +378,7 @@ class FFD_EXPORT FFD
             }
             PSType Type;
             String Name;
+            String Bind; // param name bound to field name (at Name)
             int Value; // if Name contains int. literal
         };// PSParam
         public: List<PSParam> PS{}; // parametrized struct
