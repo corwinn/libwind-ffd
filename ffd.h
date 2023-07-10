@@ -376,6 +376,7 @@ class FFD_EXPORT FFD
                 Type = FFD::SNode::PSType::Type;
                 Dbg << " - type: " << Name << EOL;
             }
+            bool inline IsField() { return FFD::SNode::PSType::Field == Type; }
             PSType Type;
             String Name;
             String Bind; // param name bound to field name (at Name)
