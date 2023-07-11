@@ -208,22 +208,21 @@ void FFDNode::ResolveSymbols(ExprCtx & ctx, FFD::SNode * sn, FFDNode * base)
     if (base) { // FFDNode
         Dbg << "   FFDNode::ResolveSymbols: looking at "
             << base->FieldNode ()->Name << EOL;
-        // handle PS field params
-        if (base->_base && base->_base->_array) { // array node
-            //TODO non-array _base
-            auto snode = base->_base->FieldNode ();
-            Dbg << "base->_base->FieldNode ()->Parametrized (): "
-                << snode->Parametrized () << EOL;
+        // handle multi-depth PS field params
+        bool ps_handled{}; auto ps_node = base->_base;
+        while (ps_node && ! ps_handled) {
+            auto snode = base->_base->FieldNode (); // synatx node
             if (snode->Parametrized ()) {
                 snode->PSDbgPrint ();
                 for (int i = 0; i < snode->PS.Count (); i++)
                     if (snode->PS[i].IsField ()) {
                         if (ctx.LSymbol == snode->PS[i].Bind)
-                            ctx.LSymbol = snode->PS[i].Name;
+                            ctx.LSymbol = snode->PS[i].Name, ps_handled = true;
                         if (ctx.RSymbol == snode->PS[i].Bind)
-                            ctx.RSymbol = snode->PS[i].Name;
+                            ctx.RSymbol = snode->PS[i].Name, ps_handled = true;
                     }
             }
+            ps_node = ps_node->_base;
         }
         FFDNode * lsym {}, * rsym {};
         if (! ctx.LSymbol.Empty ()) {
