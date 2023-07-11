@@ -57,6 +57,7 @@ struct UnqueuedThreadSafeDebugLog final
     inline L & operator<<(long v) { return Fmt ("%ld", v); }
     inline L & operator<<(unsigned long v) { return Fmt ("%lu", v); }
     inline L & operator<<(int v) { return Fmt ("%d", v); }
+    inline L & operator<<(unsigned int v) { return Fmt ("%u", v); }
     inline L & operator<<(short v) { return Fmt ("%d", v); }
     inline L & operator<<(byte v) { return Fmt ("%d", v); }
     inline L & operator<<(const String & v) { return Fmt ("%s", v.AsZStr ()); }
