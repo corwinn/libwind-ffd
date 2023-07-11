@@ -34,6 +34,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //c clang++ -std=c++14 -Istl -O0 -g -fsanitize=address,undefined,integer,leak -I. test.cpp -L. -lwind-ffd -Wl,-rpath="${PWD}" -o test
 
+static_assert(4 == sizeof(int), "I need 32-bit \"int\"");
+
 #include "ffd_model.h"
 #include "ffd_dbg.h"
 #include "ffd.h"
@@ -136,6 +138,8 @@ namespace __pointless_verbosity
 
 static FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD &, const char *);
 
+static int parse_nif_bsa_archive(FFD_NS::FFD &, FFD_NS::Stream &);
+
 // usage: test ffd data
 // what does it do: are_equal(data, Tree2File (File2Tree (ffd, data))
 int main(int argc, char ** argv)
@@ -169,6 +173,10 @@ int main(int argc, char ** argv)
             else {
                 Dbg << "File2Tree" << EOL;
                 FFD_NS::TestStream data_stream {argv[2]};
+                int bsa_chk{};
+                data_stream.Read (&bsa_chk, 4).Reset ();
+                if (4281154 == bsa_chk)
+                    return parse_nif_bsa_archive (ffd, data_stream);
                 tree = ffd.File2Tree (data_stream);
             }
         FFD_ENSURE(nullptr != tree, "File2Tree() returned null?!")
@@ -177,6 +185,147 @@ int main(int argc, char ** argv)
     }
     return 0;
 }// main()
+
+
+#define FFD_NO_PADDING __attribute__((__packed__))
+
+typedef unsigned int       u32;
+typedef unsigned long long u64;
+struct FFD_NO_PADDING BsaHeader final
+{
+    u32 sign,
+        version,
+        dir_entries_ofs, // 0x24
+        flags,
+        dcnt,  // dir count
+        fcnt,  // file count
+        dlen,  // dir names len (w/o the len prefix byte):
+        flen,  // file names len
+        mask;  // 1 - textures, 2 - meshes, 4 - menus, ...
+};
+struct FFD_NO_PADDING BsaDRef { u64 hash; u32 fcnt; u32 fofs; };
+struct FFD_NO_PADDING BsaFRef { u64 hash; u32 size; u32 dofs; };
+template <typename T> class SBuf final
+{
+    T * _b;
+    u32 _n;
+    public: SBuf(u32 n, FFD_NS::Stream * s = nullptr) : _n{n}
+    {
+        FFD_NS::OS::Alloc (_b, n);
+        if (s) s->Read (_b, n * sizeof(T));
+    }
+    public: ~SBuf() { FFD_NS::OS::Free (_b); }
+    public: inline T & operator[](u32 i) { return _b[i]; }
+    public: inline T & operator[](int i) { return _b[i]; }
+    public: inline explicit operator T *() { return _b; }
+    public: inline u32 Count() { return _n; }
+};
+struct BsaFile final
+{
+    BsaFRef bsa_entry;
+    FFD_NS::String dir_name;
+    FFD_NS::String file_name;
+    u32 dir_id{}, file_id{}, fname_id{};
+    inline void DbgPrint()
+    {
+        Dbg.Fmt ("[%5u]", dir_id).Fmt ("[%5u]", file_id)
+            .Fmt ("->[%5u]: ", fname_id)
+            << "f.size: " << bsa_entry.size << ", f.offset: "
+            << bsa_entry.dofs << ", dir: \"" << dir_name << "\""
+            << ", file: \"" << file_name << "\"" << EOL;
+    }
+};
+
+static void parse_nif(FFD_NS::FFD & ffd, FFD_NS::Stream & data_stream)
+{
+    FFD_NS::FFDNode * tree = ffd.File2Tree (data_stream);
+    FFD_ENSURE(nullptr != tree, "parse_nif(): File2Tree() returned null?!")
+    // tree->PrintTree ();
+    ffd.FreeNode (tree);
+}
+
+int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
+{
+    Dbg.Enabled = true;
+    BsaHeader h{};
+    bsa.Read (&h, sizeof(BsaHeader));
+    FFD_ENSURE(  104 == h.version, "bsa: unknown version")
+    FFD_ENSURE(   36 == h.dir_entries_ofs, "bsa: unknown version")
+    FFD_ENSURE( 8192  > h.dcnt, "bsa: dcnt overflow")
+    FFD_ENSURE(32768  > h.fcnt, "bsa: fcnt overflow")
+    FFD_ENSURE(1<<19  > h.dlen, "bsa: dlen overflow")
+    FFD_ENSURE(1<<19  > h.flen, "bsa: flen overflow")
+    FFD_ENSURE(h.flags & 3, "bsa: missing required flags")
+    FFD_ENSURE(! (h.flags & 64), "bsa: big endian not supported")
+    bool c = h.flags & 4, ef = h.flags & 256;
+    Dbg << "bsa: files: " << h.fcnt << ", dirs: " << h.dcnt
+        << (c ? " (compressed)" : "") << (ef ? " (extra fname)" : "") << EOL;
+
+    // dir entries
+    SBuf<BsaDRef> d {h.dcnt, &bsa};
+
+    // file entries
+    SBuf<BsaFile> flist{h.fcnt};
+    BsaFile * flist_ptr{flist.operator BsaFile * ()};
+    u32 fn_id{};
+    for (u32 i = 0; i < h.dcnt; i++) {
+        unsigned char nlen{};
+        bsa.Read (&nlen, 1);
+        SBuf<byte> dir_name{nlen, &bsa};
+        SBuf<BsaFRef> f {d[i].fcnt, &bsa};
+        for (u32 j = 0; j < d[i].fcnt; j++) {
+            flist_ptr->dir_id = i;
+            flist_ptr->file_id = j;
+            flist_ptr->fname_id = fn_id++;
+            flist_ptr->bsa_entry = f[j];
+            FFD_ENSURE(f[j].size < (1u<<28), "suspicious file block size")
+            flist_ptr->dir_name = FFD_NS::String {
+                dir_name.operator byte * (),
+                static_cast<int>(dir_name.Count ())};
+            // flist_ptr->DbgPrint ();
+            flist_ptr++;
+        }
+    }
+
+    // file names
+    SBuf<char> fnames_seq {h.flen, &bsa};
+    auto fnames = FFD_NS::String {
+        reinterpret_cast<const byte *>(fnames_seq.operator char * ()),
+        static_cast<int>(fnames_seq.Count ())}.Split ('\0');
+    FFD_ENSURE(fnames.Count ()-1 == static_cast<int>(h.fcnt),
+        "bsa: fnames.count != header.fcnt")
+    flist_ptr = flist.operator BsaFile * ();
+    // the last token is ""
+    for (int i = 0; i < fnames.Count ()-1; i++, flist_ptr++) {
+        flist_ptr->file_name = fnames[i];
+
+        flist_ptr->DbgPrint (); // continue;
+        bsa.Reset ().Seek (flist_ptr->bsa_entry.dofs);
+        u32 isize = flist_ptr->bsa_entry.size;
+        if (isize & (1u<<30)) {
+            isize = isize & (1u<<30);
+            c = ! c;
+        }
+        if (ef) {// skip the repeating file_name
+            unsigned char nlen{};
+            bsa.Read (&nlen, 1); // +1
+            bsa.Seek (nlen);     //  ^
+            isize -= nlen+1;     //  ^
+        }
+        if (! c) parse_nif (ffd, bsa);
+        else {
+            u32 osize{};
+            bsa.Read (&osize, 4); isize -= 4;
+            FFD_ENSURE(osize > isize, "decompressed <= compressed?!")
+            FFD_ENSURE(osize < (1u<<28), "suspicious file size")
+            FFD_NS::TestZipInflateStream znif {&bsa, static_cast<int>(isize),
+                static_cast<int>(osize)};
+            parse_nif (ffd, znif);
+        }
+    }
+
+    return 0;
+}// parse_nif_bsa_archive()
 
 FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD & ffd, const char * map)
 {
