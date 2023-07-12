@@ -38,23 +38,16 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 FFD_NAMESPACE
 
-static int _mleak_track {};
-static int _mleak_track_c {};
-
 FFDNode::~FFDNode()
 {
-    _mleak_track++;
     for (int i = 0; i < _fields.Count (); i++)
         FFD_DESTROY_OBJECT(_fields[i], FFDNode)
-    // Dbg << "destroyed nodes: " << _mleak_track << "/" << _mleak_track_c
-    //     << EOL;
 }
 
 FFDNode::FFDNode(FFD::SNode * n, Stream * br, FFDNode * base,
     FFD::SNode * field_node)
     : _s{br}, _n{n}, _f{field_node}, _base{base}
 {
-    _mleak_track_c++;
     if (base) _level = base->_level + 1;
 
     if (n->IsField ()) FromField ();
@@ -231,7 +224,6 @@ void FFDNode::ResolveSymbols(ExprCtx & ctx, FFD::SNode * sn, FFDNode * base)
             for (int i = 0; i < arr.Count (); i++) {
                 Dbg << "NodeByName() Looking for " << arr[i] << EOL;
                 lsym = lsym->NodeByName (arr[i]);
-                // FFD_ENSURE(nullptr != lsym, "NodeByName() field not found.")
                 if (lsym)
                     Dbg << "NodeByName() found " << arr[i] << EOL;
                 else break;
@@ -252,7 +244,6 @@ void FFDNode::ResolveSymbols(ExprCtx & ctx, FFD::SNode * sn, FFDNode * base)
         else if (! lsym && ! rsym) { // they could be not found
             Dbg << "    ! lsym && ! rsym " << EOL;
             return;
-            // FFD_ENSURE(0, "Symbols not found")
         }
         else if (2 == ctx.i) { // requested both; handle enum|const op symbol
             if (lsym && ! rsym) {
@@ -384,6 +375,24 @@ void FFDNode::EvalArray()
             }
             else { // not a root SNode; no point searching at Fields
                 auto node = NodeByName (n->Arr[i].Name);
+                //TODO unite with "handle multi-depth PS field params" above
+                if (nullptr == node && AtPSStruct ()) {
+                    auto p = _base->FieldNode ()->PSParamByName (n->Arr[i].Name);
+                    if (p) {
+                        Dbg << "PS: array dim is an instance field" << EOL;
+                        auto tmp = _base->_base;
+                        while (tmp) {
+                            auto b = tmp->FieldNode ()->PSParamByBind (p->Name);
+                            if (b) {
+                                Dbg << "Found \"" << p->Name << "\" bound to \""
+                                    << b->Name << "\"" EOL;
+                                node = NodeByName (b->Name);//TODO repl. Arr[i]?
+                                break;
+                            }
+                            tmp = tmp->_base;
+                        }
+                    }
+                }
                 FFD_ENSURE(nullptr != node, "Arr. dim. not found")
                 if (node->_array) {
                     ja = true;
