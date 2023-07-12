@@ -463,6 +463,11 @@ class FFDNode
     };// VFIterator
     //TODO GetVFIterator(FFDNode * client)
     private: List<VFIterator> _vfi_list {};
+    // this node as a field has _base node as a struct
+    public: inline bool AtPSStruct()
+    {
+        return _base && _base->FieldNode ()->Parametrized ();
+    }
 };// FFDNode
 
 NAMESPACE_FFD
