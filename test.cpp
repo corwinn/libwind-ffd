@@ -236,6 +236,27 @@ struct BsaFile final
     }
 };
 
+#ifdef FFD_FILE_TO_EXTRACT
+struct tf final
+{
+    FILE * _f{};
+    tf(const char * n) : _f{fopen (n, "wb+")} {}
+    ~tf() { if (_f) fclose (_f), _f = nullptr; }
+    void write(void * buf, int bytes)
+    {
+        if (_f)
+            FFD_ENSURE(1 == fwrite (buf, bytes, 1, _f), "fwrite() failed")
+    }
+};
+static int store_nif(FFD_NS::Stream & data_stream, int size, const char * fn)
+{
+    Dbg << "Storing " << fn << EOL;
+    tf f {fn};
+    SBuf<byte> data {static_cast<u32>(size), &data_stream};
+    f.write (data.operator byte * (), size);
+    return 0;
+}
+#else
 static void parse_nif(FFD_NS::FFD & ffd, FFD_NS::Stream & data_stream)
 {
     FFD_NS::FFDNode * tree = ffd.File2Tree (data_stream);
@@ -243,6 +264,7 @@ static void parse_nif(FFD_NS::FFD & ffd, FFD_NS::Stream & data_stream)
     // tree->PrintTree ();
     ffd.FreeNode (tree);
 }
+#endif
 
 int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
 {
@@ -320,7 +342,14 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
             bsa.Seek (nlen);     //  ^
             isize -= nlen+1;     //  ^
         }
-        if (! c) parse_nif (ffd, bsa);
+        if (! c) {
+#ifdef FFD_FILE_TO_EXTRACT
+            if (FFD_FILE_TO_EXTRACT == fnames[i])
+                return store_nif (bsa, isize, FFD_FILE_TO_EXTRACT);
+#else
+            parse_nif (ffd, bsa);
+#endif
+        }
         else {
             u32 osize{};
             bsa.Read (&osize, 4); isize -= 4;
@@ -328,7 +357,12 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
             FFD_ENSURE(osize < (1u<<28), "suspicious file size")
             FFD_NS::TestZipInflateStream znif {&bsa, static_cast<int>(isize),
                 static_cast<int>(osize)};
+#ifdef FFD_FILE_TO_EXTRACT
+            if (FFD_FILE_TO_EXTRACT == fnames[i])
+                return store_nif (znif, osize, FFD_FILE_TO_EXTRACT);
+#else
             parse_nif (ffd, znif);
+#endif
         }
     }
 

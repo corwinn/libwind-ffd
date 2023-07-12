@@ -46,6 +46,9 @@ else
 _F = -fsanitize=address,undefined,integer,leak -fvisibility=hidden
 endif
 _I  = -I. -I$(MODEL)
+ifdef $FFD_FILE_TO_EXTRACT
+_I  += -DFFD_FILE_TO_EXTRACT=\"$(FFD_FILE_TO_EXTRACT)\"
+endif
 _L  = -L. -lwind-ffd -Wl,-rpath="${PWD}"
 CXXFLAGS = $(_I) -std=c++14 -fPIC $(_O) $(_F) $(_W)
 SRC = $(wildcard *.cpp)
