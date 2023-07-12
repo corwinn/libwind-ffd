@@ -46,7 +46,7 @@ else
 _F = -fsanitize=address,undefined,integer,leak -fvisibility=hidden
 endif
 _I  = -I. -I$(MODEL)
-ifdef $FFD_FILE_TO_EXTRACT
+ifneq ("${FFD_FILE_TO_EXTRACT}", "")
 _I  += -DFFD_FILE_TO_EXTRACT=\"$(FFD_FILE_TO_EXTRACT)\"
 endif
 _L  = -L. -lwind-ffd -Wl,-rpath="${PWD}"
