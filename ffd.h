@@ -377,6 +377,7 @@ class FFD_EXPORT FFD
                 Dbg << " - type: " << Name << EOL;
             }
             bool inline IsField() { return FFD::SNode::PSType::Field == Type; }
+            bool inline IsType() { return FFD::SNode::PSType::Type == Type; }
             PSType Type;
             String Name;
             String Bind; // param name bound to field name (at Name)
@@ -388,6 +389,7 @@ class FFD_EXPORT FFD
                     case FFD::SNode::PSType::Type: Dbg << "type"; break;
                     case FFD::SNode::PSType::Field: Dbg << "field"; break;
                     case FFD::SNode::PSType::IntLiteral: Dbg << "ilit"; break;
+                    default: Dbg << "undefined";
                 }
                 Dbg << ", Bound to: \"" << Bind << "\"";
             }
@@ -398,7 +400,19 @@ class FFD_EXPORT FFD
             for (int i = 0; i < PS.Count (); i++)
                 Dbg << "PS[" << i << "]: ", PS[i].DbgPrint (), Dbg << EOL;
         }
-        public: bool Parametrized() const { return ! PS.Empty (); }
+        public: inline bool Parametrized() const { return ! PS.Empty (); }
+        public: inline PSParam * PSParamByName(const String & name)
+        {
+            for (int i = 0; i < PS.Count (); i++)
+                if (name == PS[i].Name) return &(PS[i]);
+            return nullptr;
+        }
+        public: inline PSParam * PSParamByBind(const String & name)
+        {
+            for (int i = 0; i < PS.Count (); i++)
+                if (name == PS[i].Bind) return &(PS[i]);
+            return nullptr;
+        }
     };// SNode
 
     private: SNode * _root {};
