@@ -286,7 +286,7 @@ class FFD_EXPORT FFD
         public: inline bool HasExpr() const { return Expr.Count () > 0; }
         public: inline void DbgPrint()
         {
-            Dbg << "+" << TypeToString () << ": ";
+            Dbg << "+(" << Dbg.Fmt ("%p", this) << ")" << TypeToString () << ": ";
             if (HashKey) Dbg << "[hk;HashType:" << HashType << "]";
             if (Array) Dbg << "[arr]";
             if (Variadic) Dbg << "[var]";
