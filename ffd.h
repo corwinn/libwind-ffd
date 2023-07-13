@@ -413,6 +413,12 @@ class FFD_EXPORT FFD
                 if (name == PS[i].Bind) return &(PS[i]);
             return nullptr;
         }
+        public: template <typename F> inline PSParam * PSParamBy(F f)
+        {
+            for (int i = 0; i < PS.Count (); i++)
+                if (f (PS[i])) return &(PS[i]);
+            return nullptr;
+        }
     };// SNode
 
     private: SNode * _root {};
