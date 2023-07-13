@@ -557,22 +557,22 @@ void FFDNode::FromStruct(FFD::SNode * sn)
             continue;
         }
         if (! n->DType && FieldNode ()->Parametrized ()) {
-            Dbg << "<><> FieldNode: " << FieldNode ()->Name << EOL;
-            FieldNode ()->DbgPrint ();
+            Dbg << "<><> FieldNode: "; FieldNode ()->DbgPrint ();
             Dbg << "<><> Resolving parametrized " << n->DTypeName << EOL;
-            FieldNode ()->PSDbgPrint ();
-            FFD_ENSURE(FieldNode ()->DType->Parametrized (),
-                "the PS isn't parametrized?!")
-            Dbg << "<><> PS Names: " << EOL;
-            int key{-1};
-            for (int i = 0; i < FieldNode ()->DType->PS.Count (); i++) {
-                Dbg << "  p[0] = " << FieldNode ()->DType->PS[i].Name << EOL;
-                if (n->DTypeName == FieldNode ()->DType->PS[i].Name) {
-                    key = i; break;
+            Dbg << "<><> FieldNodePS: "; FieldNode ()->PSDbgPrint ();
+            auto base{this};
+            while (base) {
+                auto p = base->FieldNode ()->PSParamBy ([&](auto & pp) {
+                    return pp.IsType () && pp.Bind == n->DTypeName; });
+                if (p) {
+                    n->DType = n->Base->NodeByName (p->Name);
+                    if (nullptr != n->DType) {
+                        Dbg << "<><> Found parametrized " << p->Name << EOL;
+                        break;
+                    }
                 }
+                base = base->_base;
             }
-            FFD_ENSURE(key >= 0, "Unknown PS param")
-            n->DType = n->Base->NodeByName (FieldNode ()->PS[key].Name);
             FFD_ENSURE(nullptr != n->DType, "Create the parametrized DType")
         }
         if (n->DType && n->DType->IsStruct ()) {
