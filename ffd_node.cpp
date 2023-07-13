@@ -579,8 +579,15 @@ void FFDNode::FromStruct(FFD::SNode * sn)
             FFD_ENSURE(nullptr != n->DType, "Create the parametrized DType")
         }
         if (n->DType && n->DType->IsStruct ()) {
-            if (n->Composite) n->Name = "{composite}";
-            FFD_CREATE_OBJECT(f, FFDNode) {n->DType, _s, this, n};
+            if (n->Composite && ! n->Parametrized ()) {//TODO composite && ps
+                Dbg << "Composite struct: " << n->DType->Name << EOL;
+                //TODO do this at the FFDParser, otherwise one and the same
+                //     syntax node could get modified more than once - not ok
+                FromStruct (n->DType);
+                continue;
+            }
+            else
+                FFD_CREATE_OBJECT(f, FFDNode) {n->DType, _s, this, n};
         }
         else {//TODO to functions
             if (n->Variadic) {
