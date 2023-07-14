@@ -259,10 +259,16 @@ static int store_nif(FFD_NS::Stream & data_stream, int size, const char * fn)
 #else
 static void parse_nif(FFD_NS::FFD & ffd, FFD_NS::Stream & data_stream)
 {
+#ifdef FFD_QTEST
+    Dbg.Enabled = false;
+#endif
     FFD_NS::FFDNode * tree = ffd.File2Tree (data_stream);
     FFD_ENSURE(nullptr != tree, "parse_nif(): File2Tree() returned null?!")
     // tree->PrintTree ();
     ffd.FreeNode (tree);
+#ifdef FFD_QTEST
+    Dbg.Enabled = true;
+#endif
 }
 #endif
 
