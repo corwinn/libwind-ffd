@@ -182,17 +182,19 @@ class FFDNode
             default: FFD_ENSURE(0, "Don't request that AsShort")
         }
     }
+    public: template <typename T> inline T As() const
+    {
+        return *(reinterpret_cast<T *>(_data.operator byte * ()));
+    }
     public: inline int AsInt(FFDNode * ht = nullptr) const
     {
         int result {};
         switch (_data.Length ())
         {
-            case 1:
-                result = static_cast<int>(*(_data.operator byte * ())); break;
+            case 1: result = static_cast<int>(As<byte> ()); break;
             case 2: result = static_cast<int>(
-                *(reinterpret_cast<short *>(_data.operator byte * ()))); break;
-            case 4: result = static_cast<int>(
-                *(reinterpret_cast<int *>(_data.operator byte * ()))); break;
+                _signed ? As<short> () : As<unsigned short> ()); break;
+            case 4: result = As<int> (); break;
             default: FFD_ENSURE(0, "Don't request that AsInt")
         }
         if ((_hk && ! ht) || (ht && ht != _ht)) {//TODO test-me
