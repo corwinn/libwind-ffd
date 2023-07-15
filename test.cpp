@@ -257,17 +257,18 @@ static int store_nif(FFD_NS::Stream & data_stream, int size, const char * fn)
     return 0;
 }
 #else
-static void parse_nif(FFD_NS::FFD & ffd, FFD_NS::Stream & data_stream)
+static void parse_nif(FFD_NS::FFD & ffd, FFD_NS::Stream & data_stream,
+    bool no = false)
 {
 #ifdef FFD_QTEST
-    Dbg.Enabled = false;
+    Dbg.Enabled = no ? Dbg.Enabled : false;
 #endif
     FFD_NS::FFDNode * tree = ffd.File2Tree (data_stream);
     FFD_ENSURE(nullptr != tree, "parse_nif(): File2Tree() returned null?!")
     // tree->PrintTree ();
     ffd.FreeNode (tree);
 #ifdef FFD_QTEST
-    Dbg.Enabled = true;
+    Dbg.Enabled = no ? Dbg.Enabled : true;
 #endif
 }
 #endif
