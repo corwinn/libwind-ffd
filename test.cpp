@@ -263,6 +263,7 @@ static void parse_nif(FFD_NS::FFD & ffd, FFD_NS::Stream & data_stream,
 #ifdef FFD_QTEST
     Dbg.Enabled = no ? Dbg.Enabled : false;
 #endif
+    ffd.Invalidate ();
     FFD_NS::FFDNode * tree = ffd.File2Tree (data_stream);
     FFD_ENSURE(nullptr != tree, "parse_nif(): File2Tree() returned null?!")
     // tree->PrintTree ();

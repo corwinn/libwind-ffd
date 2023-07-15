@@ -419,6 +419,28 @@ class FFD_EXPORT FFD
                 if (f (PS[i])) return &(PS[i]);
             return nullptr;
         }
+        // Switching between input file version requires some invalidation.
+        // example: bool machine type differs in size based on input;
+        //          while caching it is ok, because bool is used at many places
+        //          within one input, caching across multiple inputs - isn't
+        //TODO remove when the monolithic one is off
+        public: inline void Reset()
+        {
+            WalkForward ([](auto sn) {
+                if (sn->IsConst () || sn->IsMachType () || sn->IsEnum ()) {
+                    Dbg << "Invalidate(f): " << sn->Name << EOL;
+                    sn->Resolved = sn->Enabled = false;
+                }
+                return true;
+            });
+            WalkBackwards ([](auto sn) {
+                if (sn->IsConst () || sn->IsMachType () || sn->IsEnum ()) {
+                    Dbg << "Invalidate(b): " << sn->Name << EOL;
+                    sn->Resolved = sn->Enabled = false;
+                }
+                return true;
+            });
+        }
     };// SNode
 
     private: SNode * _root {};
@@ -436,6 +458,7 @@ class FFD_EXPORT FFD
     {
         return _root->GetAttr (query);
     }
+    public: inline void Invalidate() { _root->Reset ();}
 };// FFD
 
 NAMESPACE_FFD
