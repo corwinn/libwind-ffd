@@ -615,7 +615,7 @@ void FFDNode::FromStruct(FFD::SNode * sn)
                     if (_base->_vfi_list.Empty ())//TODO see GetVFIterator
                         _base->_vfi_list.Add (VFIterator {ht});
                     auto em_node = FieldNode ()->NodeByName (
-                        _base->_vfi_list[0].ResolveToString ());
+                        _base->_vfi_list[0].ResolveToString (&ht));
                     FFD_ENSURE(em_node != nullptr, "  ++var: not found")
                     Dbg <<  "  ++var: em_node: "; em_node->DbgPrint ();
                     FromStruct (em_node);

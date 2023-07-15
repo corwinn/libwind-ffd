@@ -449,10 +449,18 @@ class FFDNode
         int Key{};  // Ht[1]->AsArr()[Index++]
         List<FFDNode *> Ht{}; // 1. Ht[0]->_fields[Key]
                               // 2. Ht[0]->AsString()
-        inline String ResolveToString()
+        inline String ResolveToString(List<FFDNode *> * update = nullptr)
         {
             Dbg << "VFIterator: ResolveToString" <<  Ht.Count () << EOL;
-            if (1 == Ht.Count ()) return Ht[0]->_fields[0]->AsString ();
+            if (1 == Ht.Count ()) { // this becomes a template?!
+                //TODO clarify the ??-iterator situation: names, over what
+                //     it is being iterated, are not in a pre-defined array;
+                //     a.k.a. the iterator is building the array
+                if (update) Ht[0] = update->operator[] (0);
+                Dbg << "VFIterator: val: " << Ht[0]->_fields[0]->AsString ()
+                    << " at Index: " << Index++ << EOL;
+                return Ht[0]->_fields[0]->AsString ();
+            }
             else {
                 FFD_ENSURE(Index < Count, "VFIterator: overflow")
                 int key = Ht[1]->IntArrElementAt (Index++);
