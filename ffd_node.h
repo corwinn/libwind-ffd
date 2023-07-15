@@ -440,7 +440,8 @@ class FFDNode
                 Dbg << "VFIterator: single field" << EOL;
                 return;
             }
-            Count = Ht[1]->NodeCount ();
+            // 0 -> ... struct.isnt_an_array (1 == Ht.Count ())
+            Count = Ht.Count () > 1 ? Ht[1]->NodeCount () : 0;
             Dbg << "VFIterator: ltop layer keys: " << Count << EOL;
         }
         int Index{}; //
@@ -451,7 +452,7 @@ class FFDNode
         inline String ResolveToString()
         {
             Dbg << "VFIterator: ResolveToString" <<  Ht.Count () << EOL;
-            if (1 == Ht.Count ()) return Ht[0]->AsString ();
+            if (1 == Ht.Count ()) return Ht[0]->_fields[0]->AsString ();
             else {
                 FFD_ENSURE(Index < Count, "VFIterator: overflow")
                 int key = Ht[1]->IntArrElementAt (Index++);

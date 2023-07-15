@@ -605,7 +605,8 @@ void FFDNode::FromStruct(FFD::SNode * sn)
                     for (int i = 1; i < names.Count (); i++) {
                         fn = fn->NodeByName (names[i]);
                         FFD_ENSURE(nullptr != fn, "  ++var: unk. ht.")
-                        FFD_ENSURE(fn->_array, "  ++var: non-array ht.")
+                        if (i < names.Count ()-1) // the last one can be non-arr
+                            FFD_ENSURE(fn->_array, "  ++var: non-array ht.")
                         ht.Add (fn);
                     }
                     //TODO what if _base->_base is the array, etc. refactor
@@ -616,7 +617,7 @@ void FFDNode::FromStruct(FFD::SNode * sn)
                     auto em_node = FieldNode ()->NodeByName (
                         _base->_vfi_list[0].ResolveToString ());
                     FFD_ENSURE(em_node != nullptr, "  ++var: not found")
-                    em_node->DbgPrint ();
+                    Dbg <<  "  ++var: em_node: "; em_node->DbgPrint ();
                     FromStruct (em_node);
                     continue;
                 }// if (FFD_STRUCT_BY_NAME == names[0])
