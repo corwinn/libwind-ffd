@@ -496,7 +496,7 @@ void FFDNode::EvalArray()
 void FFDNode::FromField()
 {
     Dbg << " field " << _n->Name << EOL;
-    if (! _n->DType) {
+    if (! _n->DType || _n->DType->HasExpr ()) {
         int unused {};
         bool resolve_only {true};
         Dbg << " Resolving " << _n->DTypeName << EOL;
