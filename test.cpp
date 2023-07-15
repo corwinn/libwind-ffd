@@ -228,11 +228,11 @@ struct BsaFile final
     BsaFRef bsa_entry;
     FFD_NS::String dir_name;
     FFD_NS::String file_name;
-    u32 dir_id{}, file_id{}, fname_id{};
+    u32 dir_id{}, file_id{}, fname_id{}, fname_total{};
     inline void DbgPrint()
     {
         Dbg.Fmt ("[%5u]", dir_id).Fmt ("[%5u]", file_id)
-            .Fmt ("->[%5u]: ", fname_id)
+            .Fmt ("->[%5u", fname_id).Fmt ("/%5u]: ", fname_total)
             << "f.size: " << bsa_entry.size << ", f.offset: "
             << bsa_entry.dofs << ", dir: \"" << dir_name << "\""
             << ", file: \"" << file_name << "\"" << EOL;
@@ -285,9 +285,9 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
     FFD_ENSURE(  104 == h.version, "bsa: unknown version")
     FFD_ENSURE(   36 == h.dir_entries_ofs, "bsa: unknown version")
     FFD_ENSURE( 8192  > h.dcnt, "bsa: dcnt overflow")
-    FFD_ENSURE(32768  > h.fcnt, "bsa: fcnt overflow")
+    FFD_ENSURE(65535  > h.fcnt, "bsa: fcnt overflow")
     FFD_ENSURE(1<<19  > h.dlen, "bsa: dlen overflow")
-    FFD_ENSURE(1<<19  > h.flen, "bsa: flen overflow")
+    FFD_ENSURE(1<<20  > h.flen, "bsa: flen overflow")
     FFD_ENSURE(h.flags & 3, "bsa: missing required flags")
     FFD_ENSURE(! (h.flags & 64), "bsa: big endian not supported")
     bool c = h.flags & 4, ef = h.flags & 256;
@@ -300,7 +300,7 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
     // file entries
     SBuf<BsaFile> flist{h.fcnt};
     BsaFile * flist_ptr{flist.operator BsaFile * ()};
-    u32 fn_id{};
+    u32 fn_id{1};
     for (u32 i = 0; i < h.dcnt; i++) {
         unsigned char nlen{};
         bsa.Read (&nlen, 1);
@@ -310,6 +310,7 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
             flist_ptr->dir_id = i;
             flist_ptr->file_id = j;
             flist_ptr->fname_id = fn_id++;
+            flist_ptr->fname_total = h.fcnt;
             flist_ptr->bsa_entry = f[j];
             FFD_ENSURE(f[j].size < (1u<<28), "suspicious file block size")
             flist_ptr->dir_name = FFD_NS::String {
