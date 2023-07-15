@@ -55,7 +55,9 @@ class TestStream final : public Stream
 {
     public: Stream & Read(void * v, size_t b) override
     {
-        FFD_ENSURE(fread (v, 1, b, _f) == b, "fread() failed")
+        auto tmp = fread (v, 1, b, _f);
+        if (tmp != b) printf ("read(%lu): %lu\n", b, tmp);
+        FFD_ENSURE(tmp == b, "fread() failed")
         return *this;
     }
     public: off_t Tell() const override { return ftell (_f); }
@@ -83,10 +85,11 @@ class TestZipInflateStream final : public Stream
     private: static uInt constexpr _IN_BUF {1<<12}; // zlib: uInt
     private: byte _buf[_IN_BUF] {};
     private: Stream * _s;
+    private: off_t _s0;
     // The h3map one differs in init. No need to create another class.
     public: TestZipInflateStream(Stream * s, int size, int usize,
         bool h3map = false)
-        : Stream {}, _size{size}, _usize{usize}, _s{s}
+        : Stream {}, _size{size}, _usize{usize}, _s{s}, _s0 {s->Tell ()}
     {
         if (h3map) _zr = inflateInit2 (&_zs, 31);
         else _zr = inflateInit (&_zs);
@@ -107,7 +110,7 @@ class TestZipInflateStream final : public Stream
         _zs.next_out = static_cast<z_const Bytef *>(buf);
         while (_zs.avail_out > 0) {
             if (_zs.avail_in <= 0) {
-                _zs.avail_in = static_cast<uInt>(_size - _s->Tell ());
+                _zs.avail_in = static_cast<uInt>(_size - (_s->Tell () - _s0));
                 FFD_ENSURE(_zs.avail_in > 0, "TestZIStream::Read no more input")
                 if (_zs.avail_in > _IN_BUF) _zs.avail_in = _IN_BUF;
                 _s->Read (_buf, _zs.avail_in);
