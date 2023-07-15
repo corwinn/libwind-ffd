@@ -426,20 +426,22 @@ class FFD_EXPORT FFD
         //TODO remove when the monolithic one is off
         public: inline void Reset()
         {
-            WalkForward ([](auto sn) {
-                if (sn->IsConst () || sn->IsMachType () || sn->IsEnum ()) {
-                    Dbg << "Invalidate(f): " << sn->Name << EOL;
-                    sn->Resolved = sn->Enabled = false;
-                }
-                return true;
-            });
-            WalkBackwards ([](auto sn) {
-                if (sn->IsConst () || sn->IsMachType () || sn->IsEnum ()) {
-                    Dbg << "Invalidate(b): " << sn->Name << EOL;
-                    sn->Resolved = sn->Enabled = false;
-                }
-                return true;
-            });
+            WalkForward ([](auto sn) { return sn->Invalidate (), true; });
+            WalkBackwards ([](auto sn) { return sn->Invalidate (), true; });
+        }
+        public: inline void Invalidate()
+        {
+            if (IsConst () || IsMachType () || IsEnum ()) {
+                Dbg << "Invalidate: " << Name << EOL;
+                Resolved = Enabled = false;
+            }
+            else if (IsStruct ()) {
+                // reset fields dtype where said dtype is a machine type
+                // depending on an expression
+                for (auto f : Fields)
+                    f->DType = f->DType && f->DType->IsMachType ()
+                        && f->DType->HasExpr () ? nullptr : f->DType;
+            }
         }
     };// SNode
 
