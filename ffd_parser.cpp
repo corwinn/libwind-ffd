@@ -410,6 +410,8 @@ FFDParser::ExprTokenType FFDParser::TokenizeExpressionOp()
             Dbg << "|| ";
             return _i+=2, ExprTokenType::opOr;
         case '&':
+            // require ' ' after &
+            if (' ' == _buf[_i+1]) return _i+=1, ExprTokenType::opBWAnd;
             FFD_ENSURE_LFFD('&' == _buf[_i+1], "Wrong Op")
             FFD_ENSURE_LFFD(is_line_whitespace (_buf[_i+2]), "Wrong Op")
             Dbg << "&& ";

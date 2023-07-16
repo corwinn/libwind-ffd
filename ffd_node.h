@@ -237,6 +237,7 @@ class FFDNode
                 case FFDParser::ExprTokenType::opLE: return v[0] <= v[1];
                 case FFDParser::ExprTokenType::opOr: return v[0] || v[1];
                 case FFDParser::ExprTokenType::opAnd: return v[0] && v[1];
+                case FFDParser::ExprTokenType::opBWAnd: return v[0] & v[1];
                 default: FFD_ENSURE(0, "Unknown op")
             }
         }
@@ -253,6 +254,7 @@ class FFDNode
                 case FFDParser::ExprTokenType::opLE: Dbg << "<= "; break;
                 case FFDParser::ExprTokenType::opOr: Dbg << "|| "; break;
                 case FFDParser::ExprTokenType::opAnd: Dbg << "&& "; break;
+                case FFDParser::ExprTokenType::opBWAnd: Dbg << "& "; break;
                 default: Dbg << "?? "; break;
             }
         }

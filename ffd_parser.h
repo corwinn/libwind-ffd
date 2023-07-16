@@ -157,7 +157,7 @@ class FFDParser
     // Part of the expression evaluator. Divide responsibilities: the parser
     // does the formal spec: all parsing and pre-processing.
     public: enum class ExprTokenType {None, Open, Close, Symbol, Number,
-        opN, opNE, opE, opG, opL, opGE, opLE, opOr, opAnd};
+        opN, opNE, opE, opG, opL, opGE, opLE, opOr, opAnd, opBWAnd};
     public: struct ExprToken final
     {
         ExprToken(ExprTokenType t) : Type{t} {}
