@@ -354,6 +354,10 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
             bsa.Seek (nlen);     //  ^
             isize -= nlen+1;     //  ^
         }
+#define FFD_BSA_ARCHIVE_HAS_BROKEN_FILES
+#ifdef FFD_BSA_ARCHIVE_HAS_BROKEN_FILES
+#include "broken_files_list"
+#endif
         if (! c) {
 #ifdef FFD_FILE_TO_EXTRACT
             if (FFD_FILE_TO_EXTRACT == fnames[i])
