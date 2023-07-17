@@ -445,15 +445,16 @@ void FFDNode::EvalArray()
             Dbg << "Warning: array final_size of 0: nothing to read" << EOL;
         return;
     }
-    FFD_ENSURE(final_size >= 0 && final_size <= 1<<21, // H3M_MAX_FILE_SIZE
-        "suspicious array size")
+    // Valid file value: NiPixelData.PNum 00 00 55 00 - I mean: come on
+    FFD_ENSURE(final_size >= 0 && final_size <= 1<<23, // H3M_MAX_FILE_SIZE
+        "suspicious array size 1")
     // item size
     _array_item_size = 0;
     if (n->DType->IsMachType () || n->DType->IsEnum ()) {
         Dbg << " ++item size: " << n->DType->Size << " bytes" << EOL;
         final_size *= (_array_item_size = n->DType->Size);
-        FFD_ENSURE(final_size >= 0 && final_size <= 1<<21, // H3M_MAX_FILE_SIZE
-            "suspicious array size")
+        FFD_ENSURE(final_size >= 0 && final_size <= 1<<23, // H3M_MAX_FILE_SIZE
+            "suspicious array size 2")
         _data.Resize (final_size);
         _s->Read (_data.operator byte * (), final_size);
         Dbg << " ++data: "; PrintByteSequence ();
@@ -468,7 +469,7 @@ void FFDNode::EvalArray()
             Dbg << " ++item pre-computed size: " << psize << " bytes" << EOL;
             final_size *= (_array_item_size = psize);
             FFD_ENSURE(final_size >= 0 && final_size <= 1<<21,
-                "suspicious array size")
+                "suspicious array size 3")
             // read once
             _data.Resize (final_size);
             _s->Read (_data.operator byte * (), final_size);
