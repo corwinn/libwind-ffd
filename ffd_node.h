@@ -279,9 +279,13 @@ class FFDNode
     {
         if (_data.Length () <= 0) return;
         Dbg << Dbg.Fmt ("[%002X", _data[0]);
-        for (int i = 1; i < _data.Length (); i++)
+        // ellipsis
+        constexpr int ellipsis_len = 512;
+        auto const len =
+            _data.Length () <= ellipsis_len ? _data.Length () : ellipsis_len;
+        for (int i = 1; i < len; i++)
             Dbg << Dbg.Fmt (" %002X", _data[i]);
-        Dbg << "]" << EOL;
+        Dbg << (_data.Length () <= ellipsis_len ? "" : " ...") << "]" << EOL;
     }
     public: inline FFD::SNode * FieldNode() const { return _f ? _f : _n; }
     public: inline FFDNode * NodeByName(const String & name)
