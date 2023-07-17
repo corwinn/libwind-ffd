@@ -446,14 +446,14 @@ void FFDNode::EvalArray()
         return;
     }
     // Valid file value: NiPixelData.PNum 00 00 55 00 - I mean: come on
-    FFD_ENSURE(final_size >= 0 && final_size <= 1<<23, // H3M_MAX_FILE_SIZE
+    FFD_ENSURE(final_size >= 0 && final_size <= 1<<23,
         "suspicious array size 1")
     // item size
     _array_item_size = 0;
     if (n->DType->IsMachType () || n->DType->IsEnum ()) {
         Dbg << " ++item size: " << n->DType->Size << " bytes" << EOL;
         final_size *= (_array_item_size = n->DType->Size);
-        FFD_ENSURE(final_size >= 0 && final_size <= 1<<23, // H3M_MAX_FILE_SIZE
+        FFD_ENSURE(final_size >= 0 && final_size <= 1<<23,
             "suspicious array size 2")
         _data.Resize (final_size);
         _s->Read (_data.operator byte * (), final_size);
