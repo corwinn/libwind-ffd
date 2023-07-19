@@ -96,7 +96,6 @@ template <typename F> bool eval_expr(
                 if (FFDParser::ExprTokenType::opN == e[id].Type)
                     ctx.n[ctx.i] = true;
                 else {
-                    ctx.op = e[id].Type; ctx.DbgPrint ();
                     if (2 == ctx.i) { // LR binary eval: a>b < c
                         Dbg << "Ready to compute at id " << id;
                         ctx.v[0] = ctx.Compute ();
@@ -105,6 +104,7 @@ template <typename F> bool eval_expr(
                         ctx.op = e[id].Type;
                         ctx.n[0] = ctx.n[1] = false;
                     }
+                    ctx.op = e[id].Type; ctx.DbgPrint ();
                 }
                 break;
             }
