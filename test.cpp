@@ -334,11 +334,14 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
         { //TODO if (FileName.Extension.ToLower () != "nif") continue;
             auto fc = fnames[i].Split ('.');
             if (fc.Count () <= 0) continue; // fn w/o an ext.
-            if (fc[fc.Count ()-1].Length () != 3) continue; // can't be "nif"
+            // if (fc[fc.Count ()-1].Length () != 3) continue; // can't be "nif"
             auto fn_ext = fc[fc.Count ()-1].AsZStr ();
-            if (fn_ext[0] != 'n' && fn_ext[0] != 'N') continue;
-            if (fn_ext[1] != 'i' && fn_ext[1] != 'I') continue;
-            if (fn_ext[2] != 'f' && fn_ext[2] != 'f') continue;
+            if (fn_ext[0] != 'n' && fn_ext[0] != 'N'
+                && fn_ext[0] != 't' && fn_ext[0] != 'T') continue;
+            if (fn_ext[1] != 'i' && fn_ext[1] != 'I'
+                && fn_ext[0] != 'e' && fn_ext[0] != 'E') continue;
+            if (fn_ext[2] != 'f' && fn_ext[2] != 'f'
+                && fn_ext[0] != 'x' && fn_ext[0] != 'X') continue;
         }
         flist_ptr->file_name = fnames[i];
             flist_ptr->DbgPrint (); // continue;
