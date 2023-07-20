@@ -471,6 +471,11 @@ class FFDNode
                 FFD_ENSURE(Index < Count, "VFIterator: overflow")
                 int key = Ht[1]->IntArrElementAt (Index++);
                 //TODO fix AsString() to use appropriate field based on [Text]
+                FFD_ENSURE(Ht.Count () > 0, "VFI: Ht can't be empty")
+                FFD_ENSURE(key >= 0 && key < Ht[0]->_fields.Count (),
+                    "VFI: key out of range")
+                FFD_ENSURE(Ht[0]->_fields[key]->_fields.Count () > 0,
+                    "VFI: odd hash item")
                 Dbg << "VFIterator: key: " << key << ", " << "val: "
                     << Ht[0]->_fields[key]->_fields[0]->AsString ()
                     << " at Index: " << Index-1 << EOL;
