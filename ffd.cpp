@@ -253,7 +253,7 @@ bool FFD::SNode::ParseCompositeField(FFDParser & parser, int j)
         Expr = static_cast<List<FFDParser::ExprToken> &&>(
             parser.TokenizeExpression ());
     else parser.SetCurrent (p);
-    // comment(s) and whitespace are handled by FFD::SNode::ParseField()
+    // comment(s) and white-space are handled by FFD::SNode::ParseField()
     return true;
 }
 
@@ -343,7 +343,7 @@ bool FFD::SNode::ParseField(FFDParser & parser)
                     if (parser.SymbolValid1st ())
                         Arr[arr].Name =
                             static_cast<String &&>(parser.ReadArrDim ());
-                    else { // int literal; allow line whitespace around it
+                    else { // int literal; allow line white-space around it
                         if (parser.IsLineWhitespace ()) // trim start
                             parser.SkipLineWhitespace ();
                         Arr[arr].Value = parser.ParseIntLiteral ();
@@ -500,7 +500,6 @@ FFD::SNode * FFD::SNode::NodeByName(const String & query)
 {
     FFD::SNode * result = {};
     WalkBackwards([&](FFD::SNode * node) {
-        // Dbg << "ba n: " << node->Name << "vs. " << query << EOL;
         if (node->Name == query && node->Usable ()) {
             result = node;
             return false;
@@ -509,7 +508,6 @@ FFD::SNode * FFD::SNode::NodeByName(const String & query)
     });
     if (nullptr == result && Next)
         Next->WalkForward([&](FFD::SNode * node) {
-            // Dbg << "fo n: " << node->Name << "vs. " << query << EOL;
             if (node->Name == query && node->Usable ()) {
                 result = node;
                 return false;
@@ -531,13 +529,11 @@ List<FFD::SNode *> FFD::SNode::NodesByName(const String & query)
     Dbg << "FFD::SNode::NodesByName(" << query << ")" << " at " << Name << EOL;
     List<FFD::SNode *> result = {};
     WalkBackwards([&](FFD::SNode * node) {
-        // Dbg << "  WalkBackwards: node->Name: " << node->Name << EOL;
         if (node->Name == query) result.Add (node);
         return true;
     });
     if (Next)
         Next->WalkForward([&](FFD::SNode * node) {
-            // Dbg << "  WalkForward: node->Name: " << node->Name << EOL;
             if (node->Name == query) result.Add (node);
             return true;
         });
@@ -605,7 +601,6 @@ FFD::FFD(const byte * buf, int len)
 
     Dbg << "TB LR parsing " << len << " bytes ffd" << EOL;
     FFDParser parser {buf, len};
-    // Dbg.Enabled = false;
     for (int chk = 0; parser.HasMoreData (); chk++) {
         if (parser.IsWhitespace ()) parser.SkipWhitespace ();
         // Skipped, for now
@@ -627,7 +622,6 @@ FFD::FFD(const byte * buf, int len)
                 FFD_ENSURE_FFD(nullptr == _root, "Multiple formats in a "
                     "single description aren't supported yet")
                 _root = node;
-                // Dbg.Enabled = false;
                 Dbg << "Ready to parse: " << node->Name << EOL;
             }
         }
