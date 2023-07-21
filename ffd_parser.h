@@ -72,7 +72,6 @@ class FFDParser
     public: inline int Line() const { return _line; }
     public: inline int Column() const { return _column; }
     public: inline int Tell() const { return _i; }
-    //public inline bool TokenIs(byte v) const { return byte == _buf[_i]; }
     public: inline bool AtAttributeStart() const { return '[' == _buf[_i]; }
     public: inline bool AtExprStart() const { return '(' == _buf[_i]; }
     public: inline bool AtHashStart() const { return '-' == _buf[_i]; }
