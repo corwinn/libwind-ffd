@@ -60,9 +60,11 @@ struct UnqueuedThreadSafeDebugLog final
     inline L & operator<<(unsigned int v) { return Fmt ("%u", v); }
     inline L & operator<<(short v) { return Fmt ("%d", v); }
     inline L & operator<<(byte v) { return Fmt ("%d", v); }
-    inline L & operator<<(const String & v) { return Fmt ("%s", v.AsZStr ()); }
+    inline L & operator<<(const String & v)
+    {
+        return Fmt ("%s", v.AsZStr ());
+    }
     inline L & operator<<(void * & v) { return Fmt ("%p", v); }
-    // Dbg << Dbg.Fmt ("%foo", bar) << "p" << q << EOL;
     inline L & operator<<(L & l) { return l; }
 
     bool Enabled {true}; //TODO debug channels, please
