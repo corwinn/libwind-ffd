@@ -505,9 +505,6 @@ void FFDNode::FromField()
     }
     FFD_ENSURE(nullptr != _n->DType, "field->DType can't be null")
 
-    /*_enabled = _n->HasExpr () ? EvalBoolExpr () : true;
-    if (! _enabled) return;*/
-
     auto data_type = _n->DType;
     FFD_ENSURE(data_type->IsMachType () || data_type->IsEnum (),
         "bug: FFDNode::FromStruct() passed a field with unhandled DType")
@@ -625,7 +622,6 @@ void FFDNode::FromStruct(FFD::SNode * sn)
                 for (int i = 0; i < names.Count (); i++) { // ... hk.field
                     fn = fn->NodeByName (names[i]);
                     FFD_ENSURE(nullptr != fn, "  ++var: unk. field.")
-                    // FFDNode * obj {};
                     if (fn->_hk) {
                         Dbg << "  ++var: Hash(" << fn->AsInt (fn->_ht) << ")"
                             << EOL;
