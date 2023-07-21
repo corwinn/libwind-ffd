@@ -45,7 +45,7 @@ class FFDNode;
 
 // File Format Description.
 // Wraps a ffd (a simple text file written using a simple grammar) that can be
-// used to parse different (I hope; its h3m for now) file formats.
+// used to parse different file formats.
 // A.k.a. transforms binary files into trees.
 //   data = FFD::File2Tree ("description", "file").
 class FFD_EXPORT FFD
@@ -120,9 +120,9 @@ class FFD_EXPORT FFD
 
         public: String Attribute {}; // [.*] prior it
         public: SType Type {SType::Unhandled};
-        public: SNode * Base {};   // Base->Type == SType::Struct
+        public: SNode * Base {};  // Base->Type == SType::Struct
         public: String Name {};
-        public: SNode * DType {};  // Data/dynamic type (Expr: resolved on parse)
+        public: SNode * DType {}; // Data/dynamic type (Expr: resolved on parse)
         public: String DTypeName {}; // Prior resolve
         public: List<SNode *> Fields {};
         public: List<FFDParser::ExprToken> Expr {};
@@ -142,8 +142,7 @@ class FFD_EXPORT FFD
 
         public: bool Variadic {};  // "..." Type == SType::Field
         public: bool VListItem {}; // Struct foo:value-list ; "foo" is at "Name"
-        // public String ValueList {};   // Variadic: value list :n,m,p-q,...
-        // Variadic: value list :n,m,p-q,...
+        // Variadic: value list :n, m, p-q, ...
         public: List<FFDParser::VLItem> ValueList {};
         public: inline void PrintValueList() const
         {
@@ -154,8 +153,6 @@ class FFD_EXPORT FFD
         public: inline bool InValueList(int value) const
         {
             for (auto & itm : ValueList) {
-                // Dbg << "InValueList( " << value << ", a: " << itm.A
-                //     << ", b: " << itm.B << EOL;
                 if (itm.Contains (value)) return true;
             }
             return false;
@@ -165,8 +162,6 @@ class FFD_EXPORT FFD
          //TODO more than one is an error: report it
             FFD::SNode * result = {};
             WalkBackwards([&](FFD::SNode * node) {
-                // Dbg << "FindVListItem(" << dname << " vs " << node->Name
-                //     << EOL;
                 if (node->VListItem && node->Usable () && node->Name == dname
                     && node->InValueList (value)) {
                     result = node;
@@ -176,8 +171,6 @@ class FFD_EXPORT FFD
             });
             if (nullptr == result && Next)
                 Next->WalkForward([&](FFD::SNode * node) {
-                    // Dbg << "FindVListItem(" << dname << " vs " << node->Name
-                    //    << EOL;
                     if (node->VListItem && node->Usable ()
                         && node->Name == dname && node->InValueList (value)) {
                         result = node;
@@ -286,7 +279,8 @@ class FFD_EXPORT FFD
         public: inline bool HasExpr() const { return Expr.Count () > 0; }
         public: inline void DbgPrint()
         {
-            Dbg << "+(" << Dbg.Fmt ("%p", this) << ")" << TypeToString () << ": ";
+            Dbg << "+(" << Dbg.Fmt ("%p", this) << ")" << TypeToString ()
+                << ": ";
             if (HashKey) Dbg << "[hk;HashType:" << HashType << "]";
             if (Array) Dbg << "[arr]";
             if (Variadic) Dbg << "[var]";
@@ -436,7 +430,7 @@ class FFD_EXPORT FFD
                 Resolved = Enabled = false;
             }
             else if (IsStruct ()) {
-                // reset fields dtype where said dtype is a machine type
+                // reset fields dtype - where said dtype is a machine type
                 // depending on an expression
                 for (auto f : Fields)
                     f->DType = f->DType && f->DType->IsMachType ()
@@ -450,7 +444,6 @@ class FFD_EXPORT FFD
     // at its neighbors w/o accessing third party objects.
     private: FFD::SNode * _tail {}, * _head {}; // DLL<FFD::SNode>
 
-    // public FFDNode * File2Tree(const String & d, const String & f);
     public: FFDNode * File2Tree(Stream &);
     // free the memory used by the parameter
     public: void FreeNode(FFDNode *);
