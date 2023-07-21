@@ -85,7 +85,6 @@ template <typename T> class MyString final
         while ((c = _p.find (d, p)) != std::string::npos) {
             auto t = strndup (s+p, c-p);
             r.Add (const_cast<const char *>(t));
-            // printf("s: %ld, e: %ld, t: %s" EOL, p, c, t);
             free (t);
             p = c+1;
         }
@@ -94,7 +93,6 @@ template <typename T> class MyString final
             && r.Count () > 0*/) {
             auto t = strndup (s+p, c-p);
             r.Add (const_cast<const char *>(t));
-            // printf("s: %ld, e: %ld, t: %s" EOL, p, _p.size (), t);
             free (t);
         }
         return r;
