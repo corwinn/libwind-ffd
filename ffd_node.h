@@ -294,15 +294,12 @@ class FFDNode
         // This lookup is not quite ok. Duplicate symbol names might surprise
         // one. I better think of some way to explicitly mark "public" symbols.
         if (_array) { // no point looking in it
-            // Dbg << " NodeByName: no _array lookup" << EOL;
             if (_base) return _base->NodeByName (name);
             return nullptr;
         }
 
         for (auto n : _fields) {
             auto sn = n->FieldNode ();
-            // Dbg << "  NodeByName: q:" << name << ", vs:" << sn->Name
-            //     << EOL;
             if (sn->Name == name) return n;
         }
 
