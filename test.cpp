@@ -140,7 +140,7 @@ namespace __pointless_verbosity
 }
 
 static FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD &, const char *);
-
+// returns the number of parsed files
 static int parse_nif_bsa_archive(FFD_NS::FFD &, FFD_NS::Stream &);
 
 // usage: test ffd data
@@ -179,7 +179,8 @@ int main(int argc, char ** argv)
                 int bsa_chk{};
                 data_stream.Read (&bsa_chk, 4).Reset ();
                 if (4281154 == bsa_chk)
-                    return parse_nif_bsa_archive (ffd, data_stream);
+                    return printf ("%5d: %s\n",
+                        parse_nif_bsa_archive (ffd, data_stream), argv[2]), 0;
                 tree = ffd.File2Tree (data_stream);
             }
         FFD_ENSURE(nullptr != tree, "File2Tree() returned null?!")
@@ -257,7 +258,7 @@ static int store_nif(FFD_NS::Stream & data_stream, int size, const char * fn)
     tf f {fn};
     SBuf<byte> data {static_cast<u32>(size), &data_stream};
     f.write (data.operator byte * (), size);
-    return 0;
+    return 1;
 }
 #else
 static void parse_nif(FFD_NS::FFD & ffd, FFD_NS::Stream & data_stream,
@@ -330,7 +331,7 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
         "bsa: fnames.count != header.fcnt")
     flist_ptr = flist.operator BsaFile * ();
     // the last token is ""
-    for (int i = 0; i < fnames.Count ()-1; i++, flist_ptr++) {
+    int ac = 0; for (int i = 0; i < fnames.Count ()-1; i++, flist_ptr++) {
         { //TODO if (FileName.Extension.ToLower () != "nif") continue;
             auto fc = fnames[i].Split ('.');
             if (fc.Count () <= 0) continue; // fn w/o an ext.
@@ -366,7 +367,7 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
             if (FFD_FILE_TO_EXTRACT == fnames[i])
                 return store_nif (bsa, isize, FFD_FILE_TO_EXTRACT);
 #else
-            parse_nif (ffd, bsa);
+            parse_nif (ffd, bsa); ac++;
 #endif
         }
         else {
@@ -380,12 +381,12 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
             if (FFD_FILE_TO_EXTRACT == fnames[i])
                 return store_nif (znif, osize, FFD_FILE_TO_EXTRACT);
 #else
-            parse_nif (ffd, znif);
+            parse_nif (ffd, znif); ac++;
 #endif
         }
-    }
+    }// for (name: fnames)
 
-    return 0;
+    return ac;
 }// parse_nif_bsa_archive()
 
 FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD & ffd, const char * map)
