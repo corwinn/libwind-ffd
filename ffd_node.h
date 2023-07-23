@@ -487,6 +487,7 @@ class FFDNode
     {
         return _base && _base->FieldNode ()->Parametrized ();
     }
+    public: static __attribute__ ((visibility("default"))) bool SkipAnnoyngFile;
 };// FFDNode
 
 NAMESPACE_FFD

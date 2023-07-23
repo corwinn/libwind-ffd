@@ -367,7 +367,12 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
             if (FFD_FILE_TO_EXTRACT == fnames[i])
                 return store_nif (bsa, isize, FFD_FILE_TO_EXTRACT);
 #else
-            parse_nif (ffd, bsa); ac++;
+            parse_nif (ffd, bsa);
+            if (FFD_NS::FFDNode::SkipAnnoyngFile) {
+                FFD_NS::FFDNode::SkipAnnoyngFile = false;
+                printf ("Unsupported Version "); continue;
+            }
+            ac++;
 #endif
         }
         else {
@@ -381,7 +386,12 @@ int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
             if (FFD_FILE_TO_EXTRACT == fnames[i])
                 return store_nif (znif, osize, FFD_FILE_TO_EXTRACT);
 #else
-            parse_nif (ffd, znif); ac++;
+            parse_nif (ffd, znif);
+            if (FFD_NS::FFDNode::SkipAnnoyngFile) {
+                FFD_NS::FFDNode::SkipAnnoyngFile = false;
+                printf ("Unsupported Version "); continue;
+            }
+            ac++;
 #endif
         }
     }// for (name: fnames)

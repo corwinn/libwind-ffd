@@ -37,6 +37,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <new>
 
 FFD_NAMESPACE
+bool FFDNode::SkipAnnoyngFile{};
 
 FFDNode::~FFDNode()
 {
@@ -518,6 +519,8 @@ void FFDNode::FromField()
         _signed = data_type->Signed;
         _s->Read (_data.operator byte * (), data_type->Size);
         Dbg << " field, data: "; PrintByteSequence ();
+        if ("UVersion2" == _n->Name && AsInt () == 100)
+            { FFDNode::SkipAnnoyngFile = true; return; }
         // HashKey
         if (_n->HashKey) {
             _hk = true;
@@ -652,7 +655,7 @@ void FFDNode::FromStruct(FFD::SNode * sn)
             else
                 FFD_CREATE_OBJECT(f, FFDNode) {n, _s, this};
         }// ! (n->DType && n->DType->IsStruct ())
-        _fields.Add (f);
+        _fields.Add (f); if (FFDNode::SkipAnnoyngFile) return;
     }
 }// FFD::Node::FromStruct()
 
