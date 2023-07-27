@@ -165,7 +165,6 @@ inline bool IsDirectory(const char * f)
 
 template <typename T> bool EnumFiles(const char * dn, T on_file)
 {
-    FFD_ENSURE(nullptr != on_file, "on_file can't be null")
     FFD_ENSURE(nullptr != dn, "path name can't be null")
     auto stat_dlen = strlen (dn);
     FFD_ENSURE(stat_dlen > 0, "path name length can't be <= 0")
