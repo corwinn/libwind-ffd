@@ -105,6 +105,11 @@ auto Memcpy = [](void * dest, const void * src, size_t n)
     memcpy (dest, src, n);
 };
 
+auto Memmove = [](void * dest, const void * src, size_t n)
+{
+    memmove (dest, src, n);
+};
+
 template <typename T> void Alloc(T *& p, size_t n = 1)
 {
     FFD_ENSURE(n > 0, "n < 1")
