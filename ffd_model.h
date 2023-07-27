@@ -65,6 +65,11 @@ using byte = unsigned char;
 # define FFD_PATH_SEPARATOR '\\'
 #else
 # define FFD_PATH_SEPARATOR '/'
+# include <sys/types.h>
+# include <sys/stat.h>
+# include <unistd.h>
+# include <sys/types.h>
+# include <dirent.h>
 #endif
 
 #define FFD_NS FFD
@@ -124,6 +129,88 @@ template <typename T> void Alloc(T *& p, size_t n = 1)
         Exit (2);
 }
 template <typename T> void Free(T * & p) { if (p) free (p), p = nullptr; }
+
+namespace __pointless_verbosity
+{
+    struct try_finally_closedir
+    {// instead of "try { ... } finally { ... }"
+        DIR * d;
+        try_finally_closedir(DIR * v) : d(v) {}
+        ~try_finally_closedir() { if (d) closedir (d), d = 0; }
+    };
+    template <typename T> struct __try_finally_free
+    {
+        T * _state;
+        __try_finally_free(T * state) : _state {state} {}
+        ~__try_finally_free() { OS::Free (_state); }
+        inline void Realloc(int s)
+        {
+            if (_state) OS::Free (_state); OS::Alloc (_state, s);
+        }
+    };
+}
+
+#ifdef _WIN32
+#error implement me
+#else
+inline bool IsDirectory(const char * f)
+{
+    printf ("IsDirectory: %s" EOL, f);
+    struct stat t{};
+    FFD_ENSURE(0 == stat (f, &t), "stat failed")
+    return S_ISDIR(t.st_mode);
+}
+
+template <typename T> bool EnumFiles(T & c, const char * dn,
+    bool (*on_file)(T & c, const char * n, bool directory))
+{
+    FFD_ENSURE(nullptr != on_file, "on_file can't be null")
+    FFD_ENSURE(nullptr != dn, "path name can't be null")
+    auto stat_dlen = strlen (dn);
+    FFD_ENSURE(stat_dlen > 0, "path name length can't be <= 0")
+    if (FFD_PATH_SEPARATOR == dn[stat_dlen-1]) stat_dlen--;
+
+    DIR * ds = opendir (dn);
+    FFD_ENSURE(nullptr != ds, "can't open directory")
+    __pointless_verbosity::try_finally_closedir ____ {ds};
+    char * stat_name;
+    int stat_name_max_size {4096};
+    OS::Alloc (stat_name, stat_name_max_size);
+    __pointless_verbosity::__try_finally_free<char> ___ {stat_name};
+    for (dirent * de = nullptr;;) {
+        de = readdir (ds);
+        FFD_ENSURE(! errno, "can't readdir")
+        if (! de) break;
+        if (! de->d_name[0]) {
+            printf ("Warning: readdir(): empty d_name" EOL);
+            continue;
+        }
+        auto len = strlen (de->d_name);
+        if (1 == len && '.' == de->d_name[0]) continue;
+        if (2 == len && '.' == de->d_name[0]
+                     && '.' == de->d_name[1]) continue;
+
+        int stat_clen = stat_dlen + 1 + len + 1; // +1 -> PS, +1; -> '\0'
+        if (stat_clen > stat_name_max_size)
+            ___.Realloc (stat_name_max_size = stat_clen);
+        OS::Memmove (stat_name, dn, stat_dlen);
+        stat_name[stat_dlen] = FFD_PATH_SEPARATOR;
+        Memmove (stat_name + stat_dlen + 1, de->d_name, len); // +1 -> PS
+        stat_name[stat_clen-1] = '\0'; // +1 computed above
+
+        struct stat finfo{};
+        FFD_ENSURE(0 == stat (stat_name, &finfo), "stat failed")
+        bool dir = S_ISDIR(finfo.st_mode);
+        if (! dir && ! S_ISREG(finfo.st_mode)) {
+            printf ("Warning: readdir(): skipped ! file && ! directory: "
+                "%s%c%s" EOL, dn, FFD_PATH_SEPARATOR, de->d_name);
+            continue;
+        }
+        if (! on_file (c, de->d_name, dir)) break;
+    } // for (;;)
+    return true;
+} // EnumFiles
+#endif
 
 }
 
