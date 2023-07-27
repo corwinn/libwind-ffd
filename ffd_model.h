@@ -61,6 +61,12 @@ using byte = unsigned char;
 # endif
 #endif
 
+#ifdef _WIN32
+# define FFD_PATH_SEPARATOR '\\'
+#else
+# define FFD_PATH_SEPARATOR '/'
+#endif
+
 #define FFD_NS FFD
 #define FFD_NAMESPACE namespace FFD {
 #define NAMESPACE_FFD }
