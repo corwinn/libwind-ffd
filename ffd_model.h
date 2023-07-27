@@ -161,8 +161,7 @@ inline bool IsDirectory(const char * f)
     return S_ISDIR(t.st_mode);
 }
 
-template <typename T> bool EnumFiles(T & c, const char * dn,
-    bool (*on_file)(T & c, const char * n, bool directory))
+template <typename T> bool EnumFiles(const char * dn, T on_file)
 {
     FFD_ENSURE(nullptr != on_file, "on_file can't be null")
     FFD_ENSURE(nullptr != dn, "path name can't be null")
@@ -206,7 +205,7 @@ template <typename T> bool EnumFiles(T & c, const char * dn,
                 "%s%c%s" EOL, dn, FFD_PATH_SEPARATOR, de->d_name);
             continue;
         }
-        if (! on_file (c, de->d_name, dir)) break;
+        if (! on_file (de->d_name, dir)) break;
     } // for (;;)
     return true;
 } // EnumFiles
