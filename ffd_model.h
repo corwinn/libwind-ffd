@@ -111,6 +111,8 @@ auto Strncmp = [](const char * a, const char * b, size_t n)
     return strncmp (a, b, n);
 };
 
+auto Strlen = [](const char * str) { return strlen (str); };
+
 auto Memcpy = [](void * dest, const void * src, size_t n)
 {
     memcpy (dest, src, n);
