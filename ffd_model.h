@@ -157,7 +157,6 @@ namespace __pointless_verbosity
 #else
 inline bool IsDirectory(const char * f)
 {
-    printf ("IsDirectory: %s" EOL, f);
     struct stat t{};
     FFD_ENSURE(0 == stat (f, &t), "stat failed")
     return S_ISDIR(t.st_mode);
@@ -179,8 +178,7 @@ template <typename T> bool EnumFiles(const char * dn, T on_file)
     __pointless_verbosity::__try_finally_free<char> ___ {stat_name};
     for (dirent * de = nullptr;;) {
         de = readdir (ds);
-        FFD_ENSURE(! errno, "can't readdir")
-        if (! de) break;
+        if (! de) { FFD_ENSURE(errno != EBADF, "can't readdir"); break; }
         if (! de->d_name[0]) {
             printf ("Warning: readdir(): empty d_name" EOL);
             continue;
