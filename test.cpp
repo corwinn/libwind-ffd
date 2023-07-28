@@ -40,8 +40,6 @@ static_assert(4 == sizeof(int), "I need 32-bit \"int\"");
 #include "ffd_dbg.h"
 #include "ffd.h"
 #include "ffd_node.h"
-
-// compressed streams support
 #include <zlib.h>
 #include <new>
 
@@ -140,8 +138,7 @@ namespace __pointless_verbosity
 }
 
 static FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD &, const char *);
-// returns the number of parsed files
-static int parse_nif_bsa_archive(FFD_NS::FFD &, FFD_NS::Stream &);
+static void parse_directory(FFD_NS::FFD &, const char *, const char *);
 
 // usage: test ffd data
 // what does it do: are_equal(data, Tree2File (File2Tree (ffd, data))
@@ -151,8 +148,9 @@ int main(int argc, char ** argv)
         test_the_list();
         test_the_string();
         test_the_byte_arr();
-        if (3 != argc)
-            return Dbg << "usage: test ffd data" << EOL, 0;
+        if (3 != argc && 4 != argc)
+            return Dbg << "usage: test ffd data" << EOL
+                       << "usage: test ffd dir ext_list(a,b,c,...)" << EOL, 0;
         FFD_NS::String bar {"hi"};
         Dbg << bar << "\n";
     Dbg.Enabled = true;
@@ -169,20 +167,11 @@ int main(int argc, char ** argv)
         Dbg.Enabled = false;
 #endif
             FFD_NS::FFD ffd {ffd_buf.operator byte * (), ffd_buf.Length ()};
-
             FFD_NS::FFDNode * tree{};
             if (ffd.GetAttr ("[Stream(type: zlibMapStream)]"))
                 tree = parse_h3m (ffd, argv[2]);
-            else {
-                Dbg << "File2Tree" << EOL;
-                FFD_NS::TestStream data_stream {argv[2]};
-                int bsa_chk{};
-                data_stream.Read (&bsa_chk, 4).Reset ();
-                if (4281154 == bsa_chk)
-                    return printf ("%5d: %s\n",
-                        parse_nif_bsa_archive (ffd, data_stream), argv[2]), 0;
-                tree = ffd.File2Tree (data_stream);
-            }
+            else if (FFD_NS::OS::IsDirectory (argv[2]))
+                return parse_directory (ffd, argv[2], argv[3]), 0;
         FFD_ENSURE(nullptr != tree, "File2Tree() returned null?!")
         // tree->PrintTree ();
         ffd.FreeNode (tree);
@@ -190,77 +179,46 @@ int main(int argc, char ** argv)
     return 0;
 }// main()
 
-
-#define FFD_NO_PADDING __attribute__((__packed__))
-
-typedef unsigned int       u32;
-typedef unsigned long long u64;
-struct FFD_NO_PADDING BsaHeader final
+// you manage the returned pointer
+static char * CatPath(const char * a, const char * b)
 {
-    u32 sign,
-        version,
-        dir_entries_ofs, // 0x24
-        flags,
-        dcnt,  // dir count
-        fcnt,  // file count
-        dlen,  // dir names len (w/o the len prefix byte):
-        flen,  // file names len
-        mask;  // 1 - textures, 2 - meshes, 4 - menus, ...
-};
-struct FFD_NO_PADDING BsaDRef { u64 hash; u32 fcnt; u32 fofs; };
-struct FFD_NO_PADDING BsaFRef { u64 hash; u32 size; u32 dofs; };
-template <typename T> class SBuf final
-{
-    T * _b;
-    u32 _n;
-    public: SBuf(u32 n, FFD_NS::Stream * s = nullptr) : _n{n}
-    {
-        FFD_NS::OS::Alloc (_b, n);
-        if (s) s->Read (_b, n * sizeof(T));
-    }
-    public: ~SBuf() { FFD_NS::OS::Free (_b); }
-    public: inline T & operator[](u32 i) { return _b[i]; }
-    public: inline T & operator[](int i) { return _b[i]; }
-    public: inline explicit operator T *() { return _b; }
-    public: inline u32 Count() { return _n; }
-};
-struct BsaFile final
-{
-    BsaFRef bsa_entry;
-    FFD_NS::String dir_name;
-    FFD_NS::String file_name;
-    u32 dir_id{}, file_id{}, fname_id{}, fname_total{};
-    inline void DbgPrint()
-    {
-        Dbg.Fmt ("[%5u]", dir_id).Fmt ("[%5u]", file_id)
-            .Fmt ("->[%5u", fname_id).Fmt ("/%5u]: ", fname_total)
-            << "f.size: " << bsa_entry.size << ", f.offset: "
-            << bsa_entry.dofs << ", dir: \"" << dir_name << "\""
-            << ", file: \"" << file_name << "\"" << EOL;
-    }
-};
-
-#ifdef FFD_FILE_TO_EXTRACT
-struct tf final
-{
-    FILE * _f{};
-    tf(const char * n) : _f{fopen (n, "wb+")} {}
-    ~tf() { if (_f) fclose (_f), _f = nullptr; }
-    void write(void * buf, int bytes)
-    {
-        if (_f)
-            FFD_ENSURE(1 == fwrite (buf, bytes, 1, _f), "fwrite() failed")
-    }
-};
-static int store_nif(FFD_NS::Stream & data_stream, int size, const char * fn)
-{
-    Dbg << "Storing " << fn << EOL;
-    tf f {fn};
-    SBuf<byte> data {static_cast<u32>(size), &data_stream};
-    f.write (data.operator byte * (), size);
-    return 1;
+    char * r{};
+    auto l1 = FFD_NS::OS::Strlen (a);
+    auto l2 = 1;
+    auto l3 = FFD_NS::OS::Strlen (b);
+    FFD_NS::OS::Alloc (r, l1+l2+l3+1);
+    FFD_NS::OS::Memcpy (r, a, l1);
+    r[l1] = FFD_PATH_SEPARATOR;
+    FFD_NS::OS::Memcpy (r+l1+l2, b, l3);
+    return r;
 }
-#else
+// naive find the text after the last '.' in "n" - in "m"; m - list: a,b,c,...
+static bool MaskMatch(const char * n, const char * m)
+{
+    auto ln = FFD_NS::OS::Strlen (n);
+    for (int i = ln-1 ; i >= 0; i--)
+        if ('.' == n[i] && i < static_cast<int>(ln-1))
+            if (strcasestr (m, n+i+1)) return true;
+    return false;
+}
+// a recursive one
+template <typename T> void enum_files(T t, const char * d, const char * m)
+{
+    FFD_NS::OS::EnumFiles (d, [&](const char * n, bool directory)
+        {
+            // Dbg << (directory ? "[d]" : "[.]") << n << EOL;
+            auto fp = CatPath (d, n);
+            FFD_NS::OS::__pointless_verbosity::__try_finally_free<char> _ {fp};
+            if (directory) enum_files (t, fp, m);
+            else if (MaskMatch (n, m)) t (fp);
+            return true;
+        });
+}
+
+// the files that can not be parsed yet are renamed to .nop
+//TODO the misaligned blocks are a primary issue - how to specify the parser
+//     to use nif.BlockSize?!
+// broken files are renamed to .bro
 static void parse_nif(FFD_NS::FFD & ffd, FFD_NS::Stream & data_stream,
     bool no = false)
 {
@@ -276,128 +234,21 @@ static void parse_nif(FFD_NS::FFD & ffd, FFD_NS::Stream & data_stream,
     Dbg.Enabled = no ? Dbg.Enabled : true;
 #endif
 }
-#endif
 
-int parse_nif_bsa_archive(FFD_NS::FFD & ffd, FFD_NS::Stream & bsa)
+void parse_directory(FFD_NS::FFD & ffd, const char * r, const char * m)
 {
     Dbg.Enabled = true;
-    BsaHeader h{};
-    bsa.Read (&h, sizeof(BsaHeader));
-    FFD_ENSURE(  104 == h.version, "bsa: unknown version")
-    FFD_ENSURE(   36 == h.dir_entries_ofs, "bsa: unknown version")
-    FFD_ENSURE( 8192  > h.dcnt, "bsa: dcnt overflow")
-    FFD_ENSURE(65535  > h.fcnt, "bsa: fcnt overflow")
-    FFD_ENSURE(1<<19  > h.dlen, "bsa: dlen overflow")
-    FFD_ENSURE(1<<20  > h.flen, "bsa: flen overflow")
-    FFD_ENSURE(h.flags & 3, "bsa: missing required flags")
-    FFD_ENSURE(! (h.flags & 64), "bsa: big endian not supported")
-    bool c = h.flags & 4, ef = h.flags & 256;
-    Dbg << "bsa: files: " << h.fcnt << ", dirs: " << h.dcnt
-        << (c ? " (compressed)" : "") << (ef ? " (extra fname)" : "") << EOL;
-
-    // dir entries
-    SBuf<BsaDRef> d {h.dcnt, &bsa};
-
-    // file entries
-    SBuf<BsaFile> flist{h.fcnt};
-    BsaFile * flist_ptr{flist.operator BsaFile * ()};
-    u32 fn_id{1};
-    for (u32 i = 0; i < h.dcnt; i++) {
-        unsigned char nlen{};
-        bsa.Read (&nlen, 1);
-        SBuf<byte> dir_name{nlen, &bsa};
-        SBuf<BsaFRef> f {d[i].fcnt, &bsa};
-        for (u32 j = 0; j < d[i].fcnt; j++) {
-            flist_ptr->dir_id = i;
-            flist_ptr->file_id = j;
-            flist_ptr->fname_id = fn_id++;
-            flist_ptr->fname_total = h.fcnt;
-            flist_ptr->bsa_entry = f[j];
-            FFD_ENSURE(f[j].size < (1u<<28), "suspicious file block size")
-            flist_ptr->dir_name = FFD_NS::String {
-                dir_name.operator byte * (),
-                static_cast<int>(dir_name.Count ())};
-            // flist_ptr->DbgPrint ();
-            flist_ptr++;
-        }
-    }
-
-    // file names
-    SBuf<char> fnames_seq {h.flen, &bsa};
-    auto fnames = FFD_NS::String {
-        reinterpret_cast<const byte *>(fnames_seq.operator char * ()),
-        static_cast<int>(fnames_seq.Count ())}.Split ('\0');
-    FFD_ENSURE(fnames.Count ()-1 == static_cast<int>(h.fcnt),
-        "bsa: fnames.count != header.fcnt")
-    flist_ptr = flist.operator BsaFile * ();
-    // the last token is ""
-    int ac = 0; for (int i = 0; i < fnames.Count ()-1; i++, flist_ptr++) {
-        { //TODO if (FileName.Extension.ToLower () != "nif") continue;
-            auto fc = fnames[i].Split ('.');
-            if (fc.Count () <= 0) continue; // fn w/o an ext.
-            if (fc[fc.Count ()-1].Length () < 3) continue; // can't be "nif"
-            auto fn_ext = fc[fc.Count ()-1].AsZStr ();
-            if (fn_ext[0] != 'n' && fn_ext[0] != 'N'
-                && fn_ext[0] != 't' && fn_ext[0] != 'T') continue;
-            if (fn_ext[1] != 'i' && fn_ext[1] != 'I'
-                && fn_ext[1] != 'e' && fn_ext[1] != 'E') continue;
-            if (fn_ext[2] != 'f' && fn_ext[2] != 'f'
-                && fn_ext[2] != 'x' && fn_ext[2] != 'X') continue;
-        }
-        flist_ptr->file_name = fnames[i];
-            flist_ptr->DbgPrint (); // continue;
-        bsa.Reset ().Seek (flist_ptr->bsa_entry.dofs);
-        u32 isize = flist_ptr->bsa_entry.size;
-        if (isize & (1u<<30)) {
-            isize = isize & (1u<<30);
-            c = ! c;
-        }
-        if (ef) {// skip the repeating file_name
-            unsigned char nlen{};
-            bsa.Read (&nlen, 1); // +1
-            bsa.Seek (nlen);     //  ^
-            isize -= nlen+1;     //  ^
-        }
-#define FFD_BSA_ARCHIVE_HAS_BROKEN_FILES
-#ifdef FFD_BSA_ARCHIVE_HAS_BROKEN_FILES
-#include "broken_files_list"
-#endif
-        if (! c) {
-#ifdef FFD_FILE_TO_EXTRACT
-            if (FFD_FILE_TO_EXTRACT == fnames[i])
-                return store_nif (bsa, isize, FFD_FILE_TO_EXTRACT);
-#else
-            parse_nif (ffd, bsa);
-            if (FFD_NS::FFDNode::SkipAnnoyngFile) {
-                FFD_NS::FFDNode::SkipAnnoyngFile = false;
-                printf ("Unsupported Version "); continue;
-            }
-            ac++;
-#endif
-        }
-        else {
-            u32 osize{};
-            bsa.Read (&osize, 4); isize -= 4;
-            FFD_ENSURE(osize > isize, "decompressed <= compressed?!")
-            FFD_ENSURE(osize < (1u<<28), "suspicious file size")
-            FFD_NS::TestZipInflateStream znif {&bsa, static_cast<int>(isize),
-                static_cast<int>(osize)};
-#ifdef FFD_FILE_TO_EXTRACT
-            if (FFD_FILE_TO_EXTRACT == fnames[i])
-                return store_nif (znif, osize, FFD_FILE_TO_EXTRACT);
-#else
-            parse_nif (ffd, znif);
-            if (FFD_NS::FFDNode::SkipAnnoyngFile) {
-                FFD_NS::FFDNode::SkipAnnoyngFile = false;
-                printf ("Unsupported Version "); continue;
-            }
-            ac++;
-#endif
-        }
-    }// for (name: fnames)
-
-    return ac;
-}// parse_nif_bsa_archive()
+    Dbg << "parse_directory \"" << r << "\", mask: \"" << m << "\"" << EOL;
+    int files{};
+    enum_files ([&](const char * n)
+        {
+            FFD_NS::TestStream data_stream {n};
+            Dbg << n << EOL;
+            parse_nif (ffd, data_stream);
+            files++;
+        }, r, m);
+    Dbg << "parsed: " << files << EOL;
+}
 
 FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD & ffd, const char * map)
 {
