@@ -239,15 +239,21 @@ void parse_directory(FFD_NS::FFD & ffd, const char * r, const char * m)
 {
     Dbg.Enabled = true;
     Dbg << "parse_directory \"" << r << "\", mask: \"" << m << "\"" << EOL;
-    int files{};
+    int files{}, todo{};
     enum_files ([&](const char * n)
         {
             FFD_NS::TestStream data_stream {n};
             Dbg << n << EOL;
             parse_nif (ffd, data_stream);
+            if (FFD_NS::FFDNode::SkipAnnoyngFile) {
+                FFD_NS::FFDNode::SkipAnnoyngFile = false;
+                printf ("Unsupported Version\n");
+                todo++;
+            }
             files++;
         }, r, m);
-    Dbg << "parsed: " << files << EOL;
+    Dbg << "parsed: " << files; if (todo) Dbg << " (todo: " << todo << ")";
+    Dbg << EOL;
 }
 
 FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD & ffd, const char * map)
