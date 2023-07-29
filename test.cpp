@@ -206,7 +206,6 @@ template <typename T> void enum_files(T t, const char * d, const char * m)
 {
     FFD_NS::OS::EnumFiles (d, [&](const char * n, bool directory)
         {
-            // Dbg << (directory ? "[d]" : "[.]") << n << EOL;
             auto fp = CatPath (d, n);
             FFD_NS::OS::__pointless_verbosity::__try_finally_free<char> _ {fp};
             if (directory) enum_files (t, fp, m);
