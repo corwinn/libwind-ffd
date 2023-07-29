@@ -137,22 +137,21 @@ namespace __pointless_verbosity
     };
 }
 
-static FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD &, const char *);
-static void parse_directory(FFD_NS::FFD &, const char *, const char *);
+static void parse_h3m(FFD_NS::FFD &, const char *);
+static void parse_nif(FFD_NS::FFD &, const char *);
+static void parse_directory(FFD_NS::FFD &, const char *, const char *,
+    void (*)(FFD_NS::FFD &, const char *), bool = false);
 
-// usage: test ffd data
+// usage: test ffd dir ext_list(a,b,c,...)
 // what does it do: are_equal(data, Tree2File (File2Tree (ffd, data))
 int main(int argc, char ** argv)
 {
     Dbg.Enabled = false;
-        test_the_list();
-        test_the_string();
-        test_the_byte_arr();
-        if (3 != argc && 4 != argc)
-            return Dbg << "usage: test ffd data" << EOL
-                       << "usage: test ffd dir ext_list(a,b,c,...)" << EOL, 0;
-        FFD_NS::String bar {"hi"};
-        Dbg << bar << "\n";
+        test_the_list ();
+        test_the_string ();
+        test_the_byte_arr ();
+        if (4 != argc)
+            return Dbg << "usage: test ffd dir ext_list(a,b,c,...)" << EOL, 0;
     Dbg.Enabled = true;
     {
         FFD_NS::ByteArray ffd_buf {};
@@ -167,14 +166,10 @@ int main(int argc, char ** argv)
         Dbg.Enabled = false;
 #endif
             FFD_NS::FFD ffd {ffd_buf.operator byte * (), ffd_buf.Length ()};
-            FFD_NS::FFDNode * tree{};
             if (ffd.GetAttr ("[Stream(type: zlibMapStream)]"))
-                tree = parse_h3m (ffd, argv[2]);
+                return parse_directory (ffd, argv[2], argv[3], parse_h3m), 0;
             else if (FFD_NS::OS::IsDirectory (argv[2]))
-                return parse_directory (ffd, argv[2], argv[3]), 0;
-        FFD_ENSURE(nullptr != tree, "File2Tree() returned null?!")
-        // tree->PrintTree ();
-        ffd.FreeNode (tree);
+                return parse_directory (ffd, argv[2], argv[3], parse_nif), 0;
     }
     return 0;
 }// main()
@@ -218,32 +213,32 @@ template <typename T> void enum_files(T t, const char * d, const char * m)
 //TODO the misaligned blocks are a primary issue - how to specify the parser
 //     to use nif.BlockSize?!
 // broken files are renamed to .bro
-static void parse_nif(FFD_NS::FFD & ffd, FFD_NS::Stream & data_stream,
-    bool no = false)
+void parse_nif(FFD_NS::FFD & ffd, const char * n)
 {
-#ifdef FFD_QTEST
-    Dbg.Enabled = no ? Dbg.Enabled : false;
-#endif
-    ffd.Invalidate ();
+    FFD_NS::TestStream data_stream {n};
     FFD_NS::FFDNode * tree = ffd.File2Tree (data_stream);
     FFD_ENSURE(nullptr != tree, "parse_nif(): File2Tree() returned null?!")
     // tree->PrintTree ();
     ffd.FreeNode (tree);
-#ifdef FFD_QTEST
-    Dbg.Enabled = no ? Dbg.Enabled : true;
-#endif
 }
 
-void parse_directory(FFD_NS::FFD & ffd, const char * r, const char * m)
+void parse_directory(FFD_NS::FFD & ffd, const char * r, const char * m,
+    void (*pp)(FFD_NS::FFD &, const char *), bool no)
 {
     Dbg.Enabled = true;
     Dbg << "parse_directory \"" << r << "\", mask: \"" << m << "\"" << EOL;
     int files{}, todo{};
     enum_files ([&](const char * n)
         {
-            FFD_NS::TestStream data_stream {n};
             Dbg << n << EOL;
-            parse_nif (ffd, data_stream);
+#ifdef FFD_QTEST
+            Dbg.Enabled = no ? Dbg.Enabled : false;
+#endif
+            ffd.Invalidate ();
+            pp (ffd, n);
+#ifdef FFD_QTEST
+            Dbg.Enabled = no ? Dbg.Enabled : true;
+#endif
             if (FFD_NS::FFDNode::SkipAnnoyngFile) {
                 FFD_NS::FFDNode::SkipAnnoyngFile = false;
                 printf ("Unsupported Version\n");
@@ -255,13 +250,13 @@ void parse_directory(FFD_NS::FFD & ffd, const char * r, const char * m)
     Dbg << EOL;
 }
 
-FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD & ffd, const char * map)
+void parse_h3m(FFD_NS::FFD & ffd, const char * map)
 {
-    using SIMPLY_STREAM=FFD_NS::Stream;
-    using SIMPLY_ZSTREAM=FFD_NS::TestZipInflateStream;
+    using SIMPLY_STREAM = FFD_NS::Stream;
+    using SIMPLY_ZSTREAM = FFD_NS::TestZipInflateStream;
     FFD_NS::TestStream h3m_stream {map};
     SIMPLY_STREAM * data_stream {&h3m_stream};
-     // 6167 maps: the largest: 375560 bytes, uncompressed one: 1342755 bytes
+    // 6167 maps: the largest: 375560 bytes, uncompressed one: 1342755 bytes
     const int H3M_MAX_FILE_SIZE = 1<<21;
     int h, usize{}, size = static_cast<int>(h3m_stream.Size ());
     printf ("(%d bytes)", size);
@@ -280,11 +275,11 @@ FFD_NS::FFDNode * parse_h3m(FFD_NS::FFD & ffd, const char * map)
     __pointless_verbosity::__try_finally_free_the_object<SIMPLY_STREAM> __ {
         &h3m_stream != data_stream ? data_stream : nullptr};
     auto * tree = ffd.File2Tree (*data_stream);
-
-    Dbg.Enabled = true;
-    Dbg << ", unprocessed h3m_stream bytes: "
-        << h3m_stream.Size() - h3m_stream.Tell() << EOL;
-    return tree;
+    FFD_ENSURE(nullptr != tree, "parse_nif(): File2Tree() returned null?!")
+    // tree->PrintTree ();
+    ffd.FreeNode (tree);
+    printf (", unprocessed h3m_stream bytes: %lu" EOL,
+        h3m_stream.Size () - h3m_stream.Tell ());
 }// parse_h3m()
 
 // __ testworks ________________________________________________________________
