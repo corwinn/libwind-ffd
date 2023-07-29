@@ -126,4 +126,3 @@ char-set: ASCII; bytes that shall reward you with an exception:
 
 // This shall never be a XML, but eventually, if and when, I shall provide an
 // utility to export it to XML, and import it from one.
-// Much, much, ..., LATER this shall eventually evolve to an independent lib.
