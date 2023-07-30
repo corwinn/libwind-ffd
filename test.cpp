@@ -53,27 +53,65 @@ class TestStream final : public Stream
 {
     public: Stream & Read(void * v, size_t b) override
     {
-        auto tmp = fread (v, 1, b, _f);
-        if (tmp != b) printf ("read(%lu): %lu\n", b, tmp);
-        FFD_ENSURE(tmp == b, "fread() failed")
+        //printf("read(%lu\n", b);
+        byte * d = reinterpret_cast<byte *>(v);
+        while (b) {
+            if (_rb_ptr == _rb_size) {
+                _rb_size = fread (_rbuf, 1, _RBUF_SIZE, _f);
+                //printf("%d = fread(%d)\n", _rb_size, _RBUF_SIZE);
+                FFD_ENSURE(_rb_size > 0, "fread() failed")
+                _rb_ptr = 0;
+            }
+            auto a = _rb_size - _rb_ptr;
+            //printf("a = %d\n", a);
+            auto n = static_cast<int>(b) <= a ? static_cast<int>(b) : a;
+            //printf("n = %d\n", n);
+            OS::Memcpy (d, _rbuf + _rb_ptr, n);
+            _rb_ptr += n;
+            d += n;
+            b -= n;
+            //printf("_rb_ptr: %d, b: %lu\n", _rb_ptr, b);
+        }
         return *this;
     }
-    public: off_t Tell() const override { return ftell (_f); }
+    public: off_t Tell() const override
+    {
+        return ftell (_f) - (_rb_size - _rb_ptr);
+    }
     public: off_t Size() const override { return _s; }
     public: Stream & Seek(off_t o) override
     {
-        return fseek (_f, o, SEEK_CUR), *this;
+        auto t = _rb_ptr + o;
+        if (t >= 0 && t < _rb_size) {
+            _rb_ptr = t;
+            return *this;
+        }
+        else {
+            if (t < 0) o = ftell (_f) - _rb_size + t;
+            else o = ftell (_f) + (t - _rb_size);
+            _rb_ptr = _rb_size = 0; // invalidate the read buffer
+            return fseek (_f, o, SEEK_CUR), *this;
+        }
     }
     public: Stream & Reset() override { return Seek (-Tell ()); }
     public: TestStream(const char * fn) : Stream {}, _f{fopen (fn, "rb")}
     {
+        OS::Alloc (_rbuf, _RBUF_SIZE);
         if (_f)
             fseek (_f, 0, SEEK_END), _s = ftell (_f), fseek (_f, 0, SEEK_SET);
     }
-    public: ~TestStream() override { if (_f) fclose (_f), _f = nullptr; }
+    public: ~TestStream() override
+    {
+        if (_f) fclose (_f), _f = nullptr;
+        if (_rbuf) OS::Free (_rbuf);
+    }
     public: operator bool() const { return nullptr != _f; }
-    private: FILE * _f {};
-    private: off_t _s {};
+    private: FILE * _f{};
+    private: off_t _s{};
+    private: byte * _rbuf{};
+    private: int const _RBUF_SIZE{1<<17};
+    private: int _rb_size{};
+    private: int _rb_ptr{};
 };
 class TestZipInflateStream final : public Stream
 {
