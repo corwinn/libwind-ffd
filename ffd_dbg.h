@@ -45,12 +45,12 @@ struct UnqueuedThreadSafeDebugLog final
     using L = UnqueuedThreadSafeDebugLog;
     template <typename T> inline L & Fmt(const char * f, T & v)
     {
-        if (Enabled) printf (f, v);
+        if (Enabled) printf ("%s: ", Channel), printf (f, v);
         return *this;
     }
     template <typename T> inline L & Fmt(const char * f, T && v)
     {
-        if (Enabled) printf (f, v);
+        if (Enabled) printf ("%s: ", Channel), printf (f, v);
         return *this;
     }
     inline L & operator<<(const char * v) { return Fmt ("%s", v); }
@@ -67,12 +67,21 @@ struct UnqueuedThreadSafeDebugLog final
     inline L & operator<<(void * & v) { return Fmt ("%p", v); }
     inline L & operator<<(L & l) { return l; }
 
-    bool Enabled {true}; //TODO debug channels, please
+    bool Enabled{true};
+    const char * const Channel;
     FFD_EXPORT static UnqueuedThreadSafeDebugLog & D();
+    UnqueuedThreadSafeDebugLog(const char * c = nullptr, bool e = true)
+        : Enabled{e}, Channel{c ? strdup (c) : strdup ("")}
+    {
+    }
 };
 
 NAMESPACE_FFD
 
 #define Dbg (::FFD_NS::UnqueuedThreadSafeDebugLog::D ())
+
+// Not quite ..., but should do.
+// You can either ".Enabled = false" or "DBG_CHANNEL(,,false)"
+#define DBG_CHANNEL(V,N,E) auto V ::FFD_NS::UnqueuedThreadSafeDebugLog {N, E};
 
 #endif
