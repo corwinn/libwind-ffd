@@ -32,6 +32,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 **** END LICENCE BLOCK ****/
 
+// Don't learn from here.
+
 //c clang++ -std=c++14 -Istl -O0 -g -fsanitize=address,undefined,integer,leak -I. test.cpp -L. -lwind-ffd -Wl,-rpath="${PWD}" -o test
 
 static_assert(4 == sizeof(int), "I need 32-bit \"int\"");
@@ -48,7 +50,6 @@ static void test_the_string();
 static void test_the_byte_arr();
 
 FFD_NAMESPACE
-// Don't learn from here.
 class TestStream final : public Stream
 {
     public: Stream & Read(void * v, size_t b) override
@@ -86,7 +87,7 @@ class TestStream final : public Stream
             _rb_ptr = t;
             return *this;
         }
-        else {
+        else { // slow and simple
             if (t < 0) o = ftell (_f) - _rb_size + t;
             else o = ftell (_f) + (t - _rb_size);
             _rb_ptr = _rb_size = 0; // invalidate the read buffer
@@ -265,10 +266,13 @@ void parse_directory(FFD_NS::FFD & ffd, const char * r, const char * m,
 {
     Dbg.Enabled = true;
     Dbg << "parse_directory \"" << r << "\", mask: \"" << m << "\"" << EOL;
-    int files{}, todo{};
+    Dbg << "Enumerating, please wait ... ";
+    int files{}, todo{}, tfiles{};
+    enum_files ([&](const char *) { tfiles++; }, r, m); Dbg << "done" << EOL;
     enum_files ([&](const char * n)
         {
-            Dbg << n << EOL;
+            Dbg << Dbg.Fmt ("[%6d", ++files) << Dbg.Fmt ("/%6d]: ", tfiles)
+                << n << EOL;
 #ifdef FFD_QTEST
             Dbg.Enabled = no ? Dbg.Enabled : false;
 #endif
@@ -282,7 +286,6 @@ void parse_directory(FFD_NS::FFD & ffd, const char * r, const char * m,
                 printf ("Unsupported Version\n");
                 todo++;
             }
-            files++;
         }, r, m);
     Dbg << "parsed: " << files; if (todo) Dbg << " (todo: " << todo << ")";
     Dbg << EOL;
