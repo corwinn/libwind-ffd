@@ -45,12 +45,18 @@ struct UnqueuedThreadSafeDebugLog final
     using L = UnqueuedThreadSafeDebugLog;
     template <typename T> inline L & Fmt(const char * f, T & v)
     {
-        if (Enabled) printf ("%s: ", Channel), printf (f, v);
+        if (Enabled) {
+            if (Channel) printf ("%s: ", Channel);
+            printf (f, v);
+        }
         return *this;
     }
     template <typename T> inline L & Fmt(const char * f, T && v)
     {
-        if (Enabled) printf ("%s: ", Channel), printf (f, v);
+        if (Enabled) {
+            if (Channel) printf ("%s: ", Channel);
+            printf (f, v);
+        }
         return *this;
     }
     inline L & operator<<(const char * v) { return Fmt ("%s", v); }
@@ -71,7 +77,7 @@ struct UnqueuedThreadSafeDebugLog final
     const char * const Channel;
     FFD_EXPORT static UnqueuedThreadSafeDebugLog & D();
     UnqueuedThreadSafeDebugLog(const char * c = nullptr, bool e = true)
-        : Enabled{e}, Channel{c ? strdup (c) : strdup ("")}
+        : Enabled{e}, Channel{c ? strdup (c) : nullptr}
     {
     }
 };
