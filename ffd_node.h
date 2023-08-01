@@ -373,6 +373,7 @@ class FFDNode
         FFD_ENSURE(ArrayOfFields (), "Pre-computed size, not implemented yet")
         return _fields[i];
     }
+    public: inline List<FFDNode *> & Nodes() { return _fields; }
 
     public: inline const ByteArray * AsByteArray() { return &_data; }
 
