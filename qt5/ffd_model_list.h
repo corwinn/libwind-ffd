@@ -52,8 +52,7 @@ template <typename T> class MyList final
     public: inline MyList() {}
     public: inline ~MyList()
     {
-        //LATER It looks like std::vector already does this; I got double-free
-        //      with List<String> - confirm it via the test suite
+        //LATER check QVector ~() capabilities
         // for (int i = 0; i < Count (); i++) LD<T>{} (_p[i]);
     }
     public: inline MyList(const MyList<T> & v) { operator= (v); }
