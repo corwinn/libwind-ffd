@@ -40,16 +40,25 @@ CC ?= ccache clang
 CXX ?= ccache clang++
 _W  = -Wall -Wextra -Wshadow
 _O  = -O0 -g -DFFD_DEBUG -fno-exceptions -fno-threadsafe-statics -gdwarf-4
+
 ifeq ($Q, 1)
 _F = -DFFD_QTEST -fvisibility=hidden
 else
 _F = -fsanitize=address,undefined,integer,leak -fvisibility=hidden
 endif
+
 _I  = -I. -I$(MODEL)
+_L = -L. -lwind-ffd -Wl,-rpath="${PWD}"
+
+ifeq ($(MODEL), qt5)
+_I += -I${QTDIR}/include -I${QTDIR}/include/QtCore
+_L += -L${QTDIR}/lib -lQt5Core
+endif
+
 ifneq ("${FFD_FILE_TO_EXTRACT}", "")
 _I  += -DFFD_FILE_TO_EXTRACT=\"$(FFD_FILE_TO_EXTRACT)\"
 endif
-_L  = -L. -lwind-ffd -Wl,-rpath="${PWD}"
+
 CXXFLAGS = $(_I) -std=c++14 -fPIC $(_O) $(_F) $(_W)
 SRC = $(wildcard *.cpp)
 SRC := $(filter-out test.cpp,$(SRC))
