@@ -54,24 +54,24 @@ class TestStream final : public Stream
 {
     public: Stream & Read(void * v, size_t b) override
     {
-        //printf("read(%lu\n", b);
+        // printf ("read(%lu, _rb_ptr:%d, _rb_size:%d\n", b, _rb_ptr, _rb_size);
         byte * d = reinterpret_cast<byte *>(v);
         while (b) {
             if (_rb_ptr == _rb_size) {
                 _rb_size = fread (_rbuf, 1, _RBUF_SIZE, _f);
-                //printf("%d = fread(%d)\n", _rb_size, _RBUF_SIZE);
+                // printf ("%d = fread(%d)\n", _rb_size, _RBUF_SIZE);
                 FFD_ENSURE(_rb_size > 0, "fread() failed")
                 _rb_ptr = 0;
             }
             auto a = _rb_size - _rb_ptr;
-            //printf("a = %d\n", a);
+            // printf ("a = %d\n", a);
             auto n = static_cast<int>(b) <= a ? static_cast<int>(b) : a;
-            //printf("n = %d\n", n);
+            // printf ("n = %d\n", n);
             OS::Memcpy (d, _rbuf + _rb_ptr, n);
             _rb_ptr += n;
             d += n;
             b -= n;
-            //printf("_rb_ptr: %d, b: %lu\n", _rb_ptr, b);
+            // printf ("_rb_ptr: %d, b: %lu\n", _rb_ptr, b);
         }
         return *this;
     }
@@ -82,6 +82,7 @@ class TestStream final : public Stream
     public: off_t Size() const override { return _s; }
     public: Stream & Seek(off_t o) override
     {
+        // printf ("Seek(%ld\n", o);
         auto t = _rb_ptr + o;
         if (t >= 0 && t < _rb_size) {
             _rb_ptr = t;
@@ -90,8 +91,9 @@ class TestStream final : public Stream
         else { // slow and simple
             if (t < 0) o = ftell (_f) - _rb_size + t;
             else o = ftell (_f) + (t - _rb_size);
+            // printf ("o: %ld\n", o);
             _rb_ptr = _rb_size = 0; // invalidate the read buffer
-            return fseek (_f, o, SEEK_CUR), *this;
+            return fseek (_f, o, SEEK_SET), *this;
         }
     }
     public: Stream & Reset() override { return Seek (-Tell ()); }
