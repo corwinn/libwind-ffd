@@ -36,6 +36,11 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 //c clang++ -std=c++14 -Istl -O0 -g -fsanitize=address,undefined,integer,leak -I. test.cpp -L. -lwind-ffd -Wl,-rpath="${PWD}" -o test
 
+//TODO find out why ("zstd", "squashfs", 47Gb, "parsed: 305466 (todo: 5058)"):
+//       * Q=1 MODEL=qt5 | real    251m
+//       * Q=1 MODEL=stl | real    450m
+//TODO ("xz", "squashfs", 39Gb) Q=1 MODEL=qt5
+
 static_assert(4 == sizeof(int), "I need 32-bit \"int\"");
 
 #include "ffd_model.h"
