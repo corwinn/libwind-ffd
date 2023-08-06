@@ -642,7 +642,7 @@ FFDNode * FFD::File2Tree(Stream & fh2)
     Dbg << "uncompressed stream s: " << s->Tell () << "/" << s->Size () << EOL;
     return data_root;
 }
-void FFD::FreeNode(FFDNode * n) { FFD_DESTROY_OBJECT(n, FFDNode) }
+/*static*/ void FFD::FreeNode(FFDNode * n) { FFD_DESTROY_OBJECT(n, FFDNode) }
 #undef FFD_ENSURE_FFD
 
 NAMESPACE_FFD
