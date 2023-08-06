@@ -45,7 +45,7 @@ FFD_NAMESPACE
 // File Format Description.
 // This is the tree that your data gets transformed to, by the description.
 // FFDNode = f (SNode, Stream)
-class FFDNode
+class FFD_EXPORT FFDNode
 {
     private: ByteArray _data {}; // empty for _array == true; _fields has them
     private: Stream * _s {}; // reference
