@@ -50,11 +50,19 @@ static_assert(4 == sizeof(int), "I need 32-bit \"int\"");
 #include <zlib.h>
 #include <new>
 
+#if FFD_TEST_N_FILE_STREAM
+#include "n_file_stream.h"
+#define FFD_STREAM NFileStream
+#else
+#define FFD_STREAM FFD_NS::TestStream
+#endif
+
 static void test_the_list();
 static void test_the_string();
 static void test_the_byte_arr();
 
 FFD_NAMESPACE
+#ifndef FFD_TEST_N_FILE_STREAM
 class TestStream final : public Stream
 {
     public: Stream & Read(void * v, size_t b) override
@@ -121,6 +129,7 @@ class TestStream final : public Stream
     private: int _rb_size{};
     private: int _rb_ptr{};
 };
+#endif
 class TestZipInflateStream final : public Stream
 {
     private: z_stream _zs {};
@@ -201,7 +210,7 @@ int main(int argc, char ** argv)
     Dbg.Enabled = true;
     {
         FFD_NS::ByteArray ffd_buf {};
-        FFD_NS::TestStream ffd_stream {argv[1]};
+        FFD_STREAM ffd_stream {argv[1]};
         Dbg << "Using \"" << argv[1] << "\" (" << ffd_stream.Size ()
             << " bytes) FFD to parse \"" << argv[2] << "\": ";
         FFD_ENSURE(ffd_stream.Size () > 0 && ffd_stream.Size () < 1<<20,
@@ -261,7 +270,7 @@ template <typename T> void enum_files(T t, const char * d, const char * m)
 // broken files are renamed to .bro
 void parse_nif(FFD_NS::FFD & ffd, const char * n)
 {
-    FFD_NS::TestStream data_stream {n};
+    FFD_STREAM data_stream {n};
     FFD_NS::FFDNode * tree = ffd.File2Tree (data_stream);
     FFD_ENSURE(nullptr != tree, "parse_nif(): File2Tree() returned null?!")
     // tree->PrintTree ();
@@ -302,7 +311,7 @@ void parse_h3m(FFD_NS::FFD & ffd, const char * map)
 {
     using SIMPLY_STREAM = FFD_NS::Stream;
     using SIMPLY_ZSTREAM = FFD_NS::TestZipInflateStream;
-    FFD_NS::TestStream h3m_stream {map};
+    FFD_STREAM h3m_stream {map};
     SIMPLY_STREAM * data_stream {&h3m_stream};
     // 6167 maps: the largest: 375560 bytes, uncompressed one: 1342755 bytes
     const int H3M_MAX_FILE_SIZE = 1<<21;

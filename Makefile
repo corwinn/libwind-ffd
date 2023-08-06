@@ -51,7 +51,7 @@ _I  = -I. -I$(MODEL)
 _L = -L. -lwind-ffd -Wl,-rpath="${PWD}"
 
 ifeq ($(MODEL), qt5)
-_I += -I${QTDIR}/include -I${QTDIR}/include/QtCore
+_I += -I${QTDIR}/include -I${QTDIR}/include/QtCore -DFFD_TEST_N_FILE_STREAM
 _L += -L${QTDIR}/lib -lQt5Core
 endif
 
