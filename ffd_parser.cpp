@@ -192,6 +192,8 @@ static inline bool is_upper(byte b)
     int & reuse)
 {
     static int const N[16] {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    static unsigned int const P[10] {1,10,100,1000,10000,100000,1000000,
+        10000000,100000000,1000000000};
     int result = 1, i = 0; bool h = false;
     if ('-' == buf[i]) { result = -1; i++; }
     else if ('0' == buf[i] && i+1 < len && 'x' == buf[i+1]) {
@@ -202,7 +204,7 @@ static inline bool is_upper(byte b)
     // 1ff = f*(16^0) + f*(16^1) + 1*(16^2)
     FFD_ENSURE(i < len, "Incomplete integer literal") // -EOF
     // integer: nnnnnnnnnn; hexadecimal int: nnnnnnnn
-    int j = i, tmp_result = 0;
+    int j = i; unsigned int tmp_result = 0;
     if (h) {
         while (i < len && is_hexadecimal_number (buf[i])) i++;
         FFD_ENSURE(i - j <= 8, "Integer literal too long")
@@ -215,8 +217,8 @@ static inline bool is_upper(byte b)
     else {
         while (i < len && is_decimal_number (buf[i])) i++;
         FFD_ENSURE(i - j <= 10, "Integer literal too long")
-        for (int k = i-1, p = 1; k >= j; k--, p *= 10)
-            tmp_result += N[buf[k] - '0'] * p;
+        for (int k = i-1, p = -1; k >= j; k--)
+            tmp_result += N[buf[k] - '0'] * P[++p];
     }
     return reuse = i, result * tmp_result;
 }// FFDParser::ParseIntLiteral()
@@ -230,6 +232,8 @@ int FFDParser::ParseIntLiteral()
     return _i += len, result;
 #else
     static int const N[16] {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+    static unsigned int const P[10] {1,10,100,1000,10000,100000,1000000,
+        10000000,100000000,1000000000};
     int result = 1; bool h = false;
     if ('-' == _buf[_i]) { result = -1; _i++; }
     else if ('0' == _buf[_i] && _i+1 < _len && 'x' == _buf[_i+1]) {
@@ -240,7 +244,7 @@ int FFDParser::ParseIntLiteral()
     // 1ff = f*(16^0) + f*(16^1) + 1*(16^2)
     FFD_ENSURE_LFFD(_i < _len, "Incomplete integer literal") // -EOF
     // integer: nnnnnnnnnn; hexadecimal int: nnnnnnnn
-    int j = _i, tmp_result = 0;
+    int j = _i; unsigned int tmp_result = 0;
     if (h) {
         ReadWhile ("int lit.",
                     [&](){ return is_hexadecimal_number (_buf[_i]); });
@@ -254,8 +258,8 @@ int FFDParser::ParseIntLiteral()
     else {
         ReadWhile ("int lit.", [&](){ return is_decimal_number (_buf[_i]); });
         FFD_ENSURE_LFFD(_i - j <= 10, "Integer literal too long")
-        for (int k = _i-1, p = 1; k >= j; k--, p *= 10)
-            tmp_result += N[_buf[k] - '0'] * p;
+        for (int k = _i-1, p = -1; k >= j; k--)
+            tmp_result += N[_buf[k] - '0'] * P[++p];
     }
     return result * tmp_result;
 #endif
