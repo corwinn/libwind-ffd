@@ -220,7 +220,7 @@ static inline bool is_upper(byte b)
         for (int k = i-1, p = -1; k >= j; k--)
             tmp_result += N[buf[k] - '0'] * P[++p];
     }
-    return reuse = i, result * tmp_result;
+    return reuse = i, result * static_cast<int>(tmp_result);
 }// FFDParser::ParseIntLiteral()
 
 //TODO testme
@@ -261,7 +261,7 @@ int FFDParser::ParseIntLiteral()
         for (int k = _i-1, p = -1; k >= j; k--)
             tmp_result += N[_buf[k] - '0'] * P[++p];
     }
-    return result * tmp_result;
+    return result * static_cast<int>(tmp_result);
 #endif
 }// FFDParser::ParseIntLiteral()
 
