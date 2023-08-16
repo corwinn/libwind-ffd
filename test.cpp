@@ -201,7 +201,7 @@ static void parse_directory(FFD_NS::FFD &, const char *, const char *,
 // what does it do: are_equal(data, Tree2File (File2Tree (ffd, data))
 int main(int argc, char ** argv)
 {
-#if FFD_TEST_N_FILE_STREAM
+#ifdef FFD_TEST_N_FILE_STREAM
     (void)new NTextCodec; // a.k.a. register()
     QTextCodec::setCodecForLocale (QTextCodec::codecForName ("DoNotTouchTC"));
 #endif
@@ -215,7 +215,11 @@ int main(int argc, char ** argv)
     Dbg.Enabled = true;
     {
         FFD_NS::ByteArray ffd_buf {};
+#ifdef FFD_TEST_N_FILE_STREAM
+        FFD_STREAM ffd_stream {QString::fromLocal8Bit (argv[1])};
+#else
         FFD_STREAM ffd_stream {argv[1]};
+#endif
         Dbg << "Using \"" << argv[1] << "\" (" << ffd_stream.Size ()
             << " bytes) FFD to parse \"" << argv[2] << "\": ";
         FFD_ENSURE(ffd_stream.Size () > 0 && ffd_stream.Size () < 1<<20,
@@ -275,7 +279,11 @@ template <typename T> void enum_files(T t, const char * d, const char * m)
 // broken files are renamed to .bro
 void parse_nif(FFD_NS::FFD & ffd, const char * n)
 {
+#ifdef FFD_TEST_N_FILE_STREAM
     FFD_STREAM data_stream {QString::fromLocal8Bit (n)};
+#else
+    FFD_STREAM data_stream {n};
+#endif
     FFD_NS::FFDNode * tree = ffd.File2Tree (data_stream);
     FFD_ENSURE(nullptr != tree, "parse_nif(): File2Tree() returned null?!")
     // tree->PrintTree ();
@@ -316,7 +324,11 @@ void parse_h3m(FFD_NS::FFD & ffd, const char * map)
 {
     using SIMPLY_STREAM = FFD_NS::Stream;
     using SIMPLY_ZSTREAM = FFD_NS::TestZipInflateStream;
+#ifdef FFD_TEST_N_FILE_STREAM
+    FFD_STREAM h3m_stream {QString::fromLocal8Bit (map)};
+#else
     FFD_STREAM h3m_stream {map};
+#endif
     SIMPLY_STREAM * data_stream {&h3m_stream};
     // 6167 maps: the largest: 375560 bytes, uncompressed one: 1342755 bytes
     const int H3M_MAX_FILE_SIZE = 1<<21;
