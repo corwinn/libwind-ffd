@@ -44,27 +44,70 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <QFile>
 #include <QTextCodec>
 
-/*namespace {
-// https://doc.qt.io/qt-5/qtextcodec.html#creating-your-own-codec-class
-class DoNotTouchTC final : public QTextCodec
+// This code exists to solve a problem that shouldn't exist.
+class NTextCodec final : public QTextCodec
 {
     public: inline QByteArray name() const override
     {
         static QByteArray n {"DoNotTouchTC"};
         return n;
     }
-    public: inline QString convertToUnicode(const char *chars, int len,
-        QTextCodec::ConverterState *state) const override
+    public: inline int mibEnum() const override { return -10000; }
+    // Courtesy of: qtbase/src/corelib/codecs/qisciicodec.cpp
+    // Packing these tightly results in an application that is unable to start:
+    //   "__cxa_guard_acquire detected recursive initialization"
+    // e.g. the loops.
+    public: inline QByteArray convertFromUnicode(const QChar * uc, int len,
+        QTextCodec::ConverterState * cs) const override
     {
-        ??? - how to build the QString without it interfering?!
-    }
-    QString convertToUnicode(const char *chars, int len,
-        QTextCodec::ConverterState *state) const override
-    {
-    }
-}
-}*/
+        static auto UTF8 = QTextCodec::codecForName ("UTF-8");
+        // courtesy of QTextCodec::canEncode()
+        /*QTextCodec::ConverterState state {};
+        state.flags = QTextCodec::ConversionFlag::ConvertInvalidToNull;
+        UTF8->fromUnicode (uc, len, &state);
+        // printf ("convertFromUnicode.invalidChars: %d" EOL, state.invalidChars);
+        if (0 == state.invalidChars)
+            return UTF8->fromUnicode (uc, len, cs);*/
 
+        QByteArray result {len, Qt::Uninitialized};
+        uchar * ch = reinterpret_cast<uchar *>(result.data ());
+        for (int i = 0; i < len; i++)
+            *ch++ = static_cast<uchar>(uc[i].unicode ());
+
+        // courtesy of QTextCodec::canEncode()
+        QTextCodec::ConverterState state {};
+        state.flags = QTextCodec::ConversionFlag::ConvertInvalidToNull;
+        UTF8->toUnicode (reinterpret_cast<char *>(result.data ()), len, &state);
+        // printf ("convertFromUnicode.invalidChars: %d" EOL, state.invalidChars);
+        if (0 == state.invalidChars)
+            return UTF8->fromUnicode (uc, len, cs);
+
+        return result;
+    }
+    QString convertToUnicode(const char * ch, int len,
+        QTextCodec::ConverterState * cs) const override
+    {
+        // printf ("convertToUnicode(%s)" EOL, ch);
+        static auto UTF8 = QTextCodec::codecForName ("UTF-8");
+        // courtesy of QTextCodec::canEncode()
+        QTextCodec::ConverterState state {};
+        state.flags = QTextCodec::ConversionFlag::ConvertInvalidToNull;
+        UTF8->toUnicode (ch, len, &state);
+        // printf ("convertToUnicode.invalidChars: %d" EOL, state.invalidChars);
+        if (0 == state.invalidChars)
+            return UTF8->toUnicode (ch, len, cs);
+
+        QString result {len, Qt::Uninitialized};
+        QChar * uc = result.data ();
+        for (int i = 0; i < len; i++)
+            *uc++ = static_cast<uchar>(ch[i]);
+        return result;
+    }
+}; // NTextCodec
+
+//LATER this is unreliable due to QString rendering arbitrary files non-existent.
+//      delete it;
+//      For now NTextCodec solves the artificial issue.
 // Read-only, for now.
 class NFileStream final : public ::FFD_NS::Stream
 {
@@ -89,24 +132,19 @@ class NFileStream final : public ::FFD_NS::Stream
         NSURE(f_.reset (), "reset() failed")
         return *this;
     }
-    public: NFileStream(const char * n) : Stream {}, f_ {nullptr}
+    public: NFileStream(const QString & n) : Stream {}, f_ {n}
     {
         // As it happens QString transcodes its input; e.g. non-Unicode strings
-        // get modified from valid to void file names. I have no idea yet how
-        // QString::fromLocal8Bit() manages to store different byte sequence
-        // into a String:
-        //  QString::fromLatin1 vs QString::fromUtf8
-        //LATER so I can create the above QTextCodec descendant
+        // get modified from valid to void file names.
 
         // There is no choice for QFile::exists - it returns false for existing
         // files just because QString says so. Same for QFileDialog - it only
         // shows what QString allows. This was unexpected of "Qt"-like framework
-        // if (! QFile::exists (n))
-        //    qDebug () << "File does not exist: \"" << n;
+         if (! QFile::exists (n))
+            qDebug () << "File does not exist: \"" << n;
 
         // There is a choice for QFile::open
-        NSURE(f_.open (fopen (n, "rb"), QIODevice::ReadOnly,
-            QFileDevice::AutoCloseHandle), "Can't open file")
+        NSURE(f_.open (QIODevice::ReadOnly), "Can't open file")
     }
     public: ~NFileStream() override {}
     private: QFile f_;

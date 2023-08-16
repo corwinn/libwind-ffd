@@ -201,6 +201,11 @@ static void parse_directory(FFD_NS::FFD &, const char *, const char *,
 // what does it do: are_equal(data, Tree2File (File2Tree (ffd, data))
 int main(int argc, char ** argv)
 {
+#if FFD_TEST_N_FILE_STREAM
+    (void)new NTextCodec; // a.k.a. register()
+    QTextCodec::setCodecForLocale (QTextCodec::codecForName ("DoNotTouchTC"));
+#endif
+
     Dbg.Enabled = false;
         test_the_list ();
         test_the_string ();
@@ -270,7 +275,7 @@ template <typename T> void enum_files(T t, const char * d, const char * m)
 // broken files are renamed to .bro
 void parse_nif(FFD_NS::FFD & ffd, const char * n)
 {
-    FFD_STREAM data_stream {n};
+    FFD_STREAM data_stream {QString::fromLocal8Bit (n)};
     FFD_NS::FFDNode * tree = ffd.File2Tree (data_stream);
     FFD_ENSURE(nullptr != tree, "parse_nif(): File2Tree() returned null?!")
     // tree->PrintTree ();
