@@ -454,6 +454,7 @@ class FFD_EXPORT FFD
         return _root->GetAttr (query);
     }
     public: inline void Invalidate() { _root->Reset ();}
+    public: inline SNode * Root() const { return _root; }
 };// FFD
 
 NAMESPACE_FFD
