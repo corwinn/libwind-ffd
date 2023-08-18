@@ -519,7 +519,7 @@ void FFDNode::FromField()
         _signed = data_type->Signed;
         _s->Read (_data.operator byte * (), data_type->Size);
         Dbg << " field, data: "; PrintByteSequence ();
-        if ("UVersion2" == _n->Name && AsInt () == 100)
+        if ("UVersion2" == _n->Name && AsInt () == 100)//TODO shouldn't be here
             { FFDNode::SkipAnnoyngFile = true; return; }
         // HashKey
         if (_n->HashKey) {
