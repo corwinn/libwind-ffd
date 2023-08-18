@@ -477,11 +477,13 @@ class FFD_EXPORT FFD
                     Dbg << Size;
                     break;
                 case FFD::SType::Struct:
+                    //TODO parametrized struct params: Type<p1,p2,...>
                     Dbg << "struct " << this->Name << EOL;
                     for (auto n : this->Fields) if (n) n->PrintIfUsed ();
                     break;
                 case FFD::SType::Field:
                     Dbg << "    ";
+                    //TODO parametrized struct params: Type<p1,p2,...>
                     if (Composite) Dbg << this->DTypeName;
                     else if (Variadic) Dbg << "..."; // TODO key(s)
                     else if (DType) Dbg << this->DType->Name;
