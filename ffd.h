@@ -445,6 +445,7 @@ class FFD_EXPORT FFD
         {//TODO static, elsewhere
             //TODO the original expression
             using ETT = FFDParser::ExprTokenType;
+            if (list.Count () > 0) Dbg << " ";
             for (auto e : list)
                 switch (e.Type) {
                     case ETT::Open: Dbg << "("; break;
@@ -492,7 +493,6 @@ class FFD_EXPORT FFD
                         else Dbg << d.Value;
                         Dbg << "]";
                     }
-                    Dbg << " ";
                     break;
                 case FFD::SType::Enum:
                     Dbg << "enum " << this->Name << " " << this->DType->Name;
