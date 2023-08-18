@@ -471,7 +471,7 @@ class FFD_EXPORT FFD
             if (_uc <= 0) return;
             switch (Type) {
                 case FFD::SType::MachType:
-                    Dbg << this->Name << " "; //TODO alias info
+                    Dbg << "type " << this->Name << " "; //TODO alias info
                     if (this->Fp) Dbg << ".";
                     if (this->Signed) Dbg << "-";
                     Dbg << Size;
