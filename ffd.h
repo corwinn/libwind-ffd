@@ -451,7 +451,7 @@ class FFD_EXPORT FFD
                     case ETT::Open: Dbg << "("; break;
                     case ETT::Close: Dbg << ")"; break;
                     case ETT::Symbol: Dbg << e.Symbol; break;
-                    case ETT::Number: Dbg.Fmt ("%000000008X", e.Value); break;
+                    case ETT::Number: Dbg.Fmt ("0x%000000008X", e.Value); break;
                     case ETT::opN: Dbg << " ! "; break;
                     case ETT::opNE: Dbg << " != "; break;
                     case ETT::opE: Dbg << " == "; break;
@@ -477,7 +477,7 @@ class FFD_EXPORT FFD
                     Dbg << Size;
                     break;
                 case FFD::SType::Struct:
-                    //TODO parametrized struct params: Type<p1,p2,...>
+                    //TODO parametrized struct params: Name<p1,p2,...>
                     Dbg << "struct " << this->Name << EOL;
                     for (auto n : this->Fields) if (n) n->PrintIfUsed ();
                     break;
