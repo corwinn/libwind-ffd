@@ -417,7 +417,7 @@ class FFD_EXPORT FFD
         // example: bool machine type differs in size based on input;
         //          while caching it is ok, because bool is used at many places
         //          within one input, caching across multiple inputs - isn't
-        //TODO remove when the monolithic one is off
+        //TODONT remove when the monolithic one is off
         public: inline void Reset()
         {
             WalkForward ([](auto sn) { return sn->Invalidate (), true; });
@@ -437,6 +437,93 @@ class FFD_EXPORT FFD
                         && f->DType->HasExpr () ? nullptr : f->DType;
             }
         }
+        // Simplify Helpers
+        private: int _uc{};
+        public: inline void UseOnce() { if (_uc < 0x7fffffff) _uc++; }
+        // Parser gen. part one
+        private: inline void PrintExpr(const List<FFDParser::ExprToken> & list)
+        {//TODO static, elsewhere
+            //TODO the original expression
+            using ETT = FFDParser::ExprTokenType;
+            for (auto e : list)
+                switch (e.Type) {
+                    case ETT::Open: Dbg << "("; break;
+                    case ETT::Close: Dbg << ")"; break;
+                    case ETT::Symbol: Dbg << e.Symbol; break;
+                    case ETT::Number: Dbg.Fmt ("%000000008X", e.Value); break;
+                    case ETT::opN: Dbg << " ! "; break;
+                    case ETT::opNE: Dbg << " != "; break;
+                    case ETT::opE: Dbg << " == "; break;
+                    case ETT::opG: Dbg << " > "; break;
+                    case ETT::opL: Dbg << " < "; break;
+                    case ETT::opGE: Dbg << " >= "; break;
+                    case ETT::opLE: Dbg << " <= "; break;
+                    case ETT::opOr: Dbg << " || "; break;
+                    case ETT::opAnd: Dbg << " && "; break;
+                    case ETT::opBWAnd: Dbg << " & "; break;
+                    case ETT::None: break;
+                    default: Dbg << "Unknown expr. token";
+                }
+        }// PrintExpr()
+        public: inline void PrintIfUsed()
+        {//LATER to functions with a test-unit: parsed == generated
+            if (_uc <= 0) return;
+            switch (Type) {
+                case FFD::SType::MachType:
+                    Dbg << this->Name << " "; //TODO alias info
+                    if (this->Fp) Dbg << ".";
+                    if (this->Signed) Dbg << "-";
+                    Dbg << Size;
+                    break;
+                case FFD::SType::Struct:
+                    Dbg << "struct " << this->Name << EOL;
+                    for (auto n : this->Fields) if (n) n->PrintIfUsed ();
+                    break;
+                case FFD::SType::Field:
+                    Dbg << "    ";
+                    if (Composite) Dbg << this->DTypeName;
+                    else if (Variadic) Dbg << "..."; // TODO key(s)
+                    else if (DType) Dbg << this->DType->Name;
+                    else Dbg << "TODO";
+                    if (! Composite) Dbg << " " << this->Name;
+                    if (this->Array) for (auto d : this->Arr) if (! d.None ()) {
+                        Dbg << "[";
+                        if (! d.Name.Empty ()) Dbg << d.Name;
+                        else Dbg << d.Value;
+                        Dbg << "]";
+                    }
+                    Dbg << " ";
+                    break;
+                case FFD::SType::Enum:
+                    Dbg << "enum " << this->Name << " " << this->DType->Name;
+                    this->PrintExpr (this->Expr);
+                    Dbg << EOL;
+                    for (auto i : this->EnumItems) { //TODO implicit numbering?!
+                        Dbg << "    " << i.Name << " " << i.Value << EOL;
+                        this->PrintExpr (i.Expr);
+                    }
+                    break;
+                case FFD::SType::Const:
+                    Dbg << this->Name << " ";
+                    if (FFD::SConstType::Text == this->Const)
+                        Dbg << "\"" << this->StringLiteral << "\"";
+                    else if (FFD::SConstType::Int == this->Const)
+                        Dbg << this->IntLiteral;
+                    else Dbg << "Unknown Const";
+                    break;
+                case FFD::SType::Format:
+                    Dbg << "format " << this->Name << EOL;
+                    for (auto n : this->Fields) if (n) n->PrintIfUsed ();
+                    break;
+                case FFD::SType::Attribute:
+                    if (this->Base) Dbg << "    "; // field attr align
+                    Dbg << this->Attribute;
+                    break;
+                default: Dbg << "Unhandled";
+            };
+            this->PrintExpr (this->Expr);
+            Dbg << EOL;
+        }// PrintIfUsed()
     };// SNode
 
     private: SNode * _root {};

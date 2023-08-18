@@ -232,8 +232,16 @@ int main(int argc, char ** argv)
             FFD_NS::FFD ffd {ffd_buf.operator byte * (), ffd_buf.Length ()};
             if (ffd.GetAttr ("[Stream(type: zlibMapStream)]"))
                 return parse_directory (ffd, argv[2], argv[3], parse_h3m), 0;
-            else if (FFD_NS::OS::IsDirectory (argv[2]))
-                return parse_directory (ffd, argv[2], argv[3], parse_nif), 0;
+            else if (FFD_NS::OS::IsDirectory (argv[2])) {
+                parse_directory (ffd, argv[2], argv[3], parse_nif);
+                auto prev = Dbg.Enabled;
+                    Dbg.Enabled = true;
+                    ffd.Head ()->WalkForward ([](FFD_NS::FFD::SNode * n) {
+                        if (nullptr != n ) n->PrintIfUsed (); return true;
+                    });
+                Dbg.Enabled = prev;
+                return 0;
+            }
     }
     return 0;
 }// main()

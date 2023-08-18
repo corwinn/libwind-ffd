@@ -505,8 +505,9 @@ void FFDNode::FromField()
         _n->DType = ResolveSNode (_n->DTypeName, unused, _n, resolve_only);
     }
     FFD_ENSURE(nullptr != _n->DType, "field->DType can't be null")
+    _n->UseOnce (); _n->DType->UseOnce ();
 
-    auto data_type = _n->DType;
+    auto data_type = _n->DType; data_type->UseOnce ();
     FFD_ENSURE(data_type->IsMachType () || data_type->IsEnum (),
         "bug: FFDNode::FromStruct() passed a field with unhandled DType")
     if (_n->Array)
@@ -541,7 +542,7 @@ void FFDNode::FromStruct(FFD::SNode * sn)
     if (! sn) sn = _n; // temporary: allows for the recursive detour below
 
     //TODO really, remove that recursive nice-mountain-view
-    if (_f) Dbg << " field " << _f->Name << " ";
+    if (_f) { Dbg << " field " << _f->Name << " "; _f->UseOnce (); }
     Dbg << "struct lvl " << _level << ": "  << sn->Name << EOL;
     if (! don_use_f && _f && _f->Array) {
         // "Foo bar[]" that has already passed the eval below
@@ -549,14 +550,15 @@ void FFDNode::FromStruct(FFD::SNode * sn)
         return;
     }
 
-    for (auto n : sn->Fields) {
+    sn->UseOnce (); _n->UseOnce (); for (auto n : sn->Fields) {
         FFDNode * f {};
         Dbg << "<> " << sn->Name << "." << n->Name
             << Dbg.Fmt (" offset: %000000008X", _s->Tell ()) << EOL;
         if (n->HasExpr () && ! EvalBoolExpr (n, this)) {
             Dbg << " Eval: false: " << n->Name << EOL;
-            continue;
+            continue; //TODO disable its attributes too
         }
+        n->UseOnce ();
         //TODO this is a temporary workaround until A<Foo> and A<Bar> become
         //     two separate root syntax nodes; ditto for any number of params:
         //     "mangling"; sync to the "if (n->Composite)" TODO below
