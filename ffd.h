@@ -494,19 +494,18 @@ class FFD_EXPORT FFD
                     for (auto n : this->Fields) if (n) n->PrintIfUsed ();
                     break;
                 case FFD::SType::Field:
+                    FFD_ENSURE(this->Base != nullptr, "Field with no Base")
                     Dbg << "    ";
                     if (Composite) Dbg << this->DTypeName;
                     else if (Variadic) Dbg << "..."; // TODO key(s)
                     else if (DType) {
-                        FFD_ENSURE(this->Base != nullptr, "Field with no Base")
                         bool ps_type{};
-                        if (this->Base->Parametrized ()) {
+                        if (this->Base->Parametrized ())
                             for (int i = 0; i < this->Base->PS.Count (); i++)
                                 if (this->Base->PS[i].Name == this->DTypeName) {
                                     ps_type = true;
                                     Dbg << this->DTypeName;
                                 }
-                        }
                         if (! ps_type) Dbg << this->DType->Name;
                         PrintPS ([](PSParam & p) {Dbg << p.Name;});
                     }
