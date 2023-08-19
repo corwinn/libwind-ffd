@@ -466,6 +466,16 @@ class FFD_EXPORT FFD
                     default: Dbg << "Unknown expr. token";
                 }
         }// PrintExpr()
+        private: template <typename F> void PrintPS(F print)
+        {
+            if (PS.Count () > 0) {
+                Dbg << "<";
+                print (PS[0]);
+                for (int i = 1; i < this->PS.Count (); i++)
+                    Dbg << ",", print (PS[i]);
+                Dbg << ">";
+            }
+        }
         public: inline void PrintIfUsed()
         {//LATER to functions with a test-unit: parsed == generated
             if (_uc <= 0) return;
@@ -483,11 +493,22 @@ class FFD_EXPORT FFD
                     break;
                 case FFD::SType::Field:
                     Dbg << "    ";
-                    //TODO parametrized struct params: Type<p1,p2,...>
                     if (Composite) Dbg << this->DTypeName;
                     else if (Variadic) Dbg << "..."; // TODO key(s)
-                    else if (DType) Dbg << this->DType->Name;
-                    else Dbg << "TODO";
+                    else if (DType) {
+                        FFD_ENSURE(this->Base != nullptr, "Field with no Base")
+                        bool ps_type{};
+                        if (this->Base->Parametrized ()) {
+                            for (int i = 0; i < this->Base->PS.Count (); i++)
+                                if (this->Base->PS[i].Name == this->DTypeName) {
+                                    ps_type = true;
+                                    Dbg << this->DTypeName;
+                                }
+                        }
+                        if (! ps_type) Dbg << this->DType->Name;
+                        PrintPS ([](PSParam & p) {Dbg << p.Name;});
+                    }
+                    else Dbg << "TODO: " << this->DTypeName;
                     if (! Composite) Dbg << " " << this->Name;
                     if (this->Array) for (auto d : this->Arr) if (! d.None ()) {
                         Dbg << "[";
