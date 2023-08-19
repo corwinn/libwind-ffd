@@ -487,8 +487,10 @@ class FFD_EXPORT FFD
                     Dbg << Size;
                     break;
                 case FFD::SType::Struct:
-                    //TODO parametrized struct params: Name<p1,p2,...>
-                    Dbg << "struct " << this->Name << EOL;
+                    Dbg << "struct " << this->Name;
+                    // PSDbgPrint ();
+                    PrintPS ([](PSParam & p) {Dbg << p.Name;});
+                    Dbg << EOL;
                     for (auto n : this->Fields) if (n) n->PrintIfUsed ();
                     break;
                 case FFD::SType::Field:
