@@ -465,7 +465,7 @@ void FFDNode::EvalArray()
             Dbg << " ++text: " << AsString () << EOL;
     }
     else {// array item
-        int psize = n->DType->PrecomputeSize ();
+        int psize = n->DType->PrecomputeSize (); n->DType->UseOnce ();
         if (psize > 0) { // 41472 TTile for example
             Dbg << " ++item pre-computed size: " << psize << " bytes" << EOL;
             final_size *= (_array_item_size = psize);
