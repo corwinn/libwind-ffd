@@ -439,7 +439,14 @@ class FFD_EXPORT FFD
         }
         // Simplify Helpers
         private: int _uc{};
-        public: inline void UseOnce() { if (_uc < 0x7fffffff) _uc++; }
+        public: inline void UseOnce()
+        {
+            if (_uc < 0x7fffffff) _uc++;
+            // all unconditional fields become used
+            if (this->IsStruct ())
+                for (auto n : this->Fields)
+                    if (n && ! n->HasExpr ()) n->UseOnce ();
+        }
         // Parser gen. part one
         private: inline void PrintExpr(const List<FFDParser::ExprToken> & list)
         {//TODO static, elsewhere
