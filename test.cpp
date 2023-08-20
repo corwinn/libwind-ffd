@@ -211,7 +211,8 @@ int main(int argc, char ** argv)
         test_the_string ();
         test_the_byte_arr ();
         if (4 != argc)
-            return Dbg << "usage: test ffd dir ext_list(a,b,c,...)" << EOL, 0;
+            return Dbg << "usage: test ffd/dir nif_dir ext_list(a,b,c,...)"
+                << EOL, 0;
     Dbg.Enabled = true;
     {
         FFD_NS::ByteArray ffd_buf {};
@@ -292,6 +293,19 @@ void parse_nif(FFD_NS::FFD & ffd, const char * n)
 #else
     FFD_STREAM data_stream {n};
 #endif
+    // filter by version
+    byte buf[128] {};
+    data_stream.Read (buf, 128).Reset ();
+    //const char * fv = "4.2.1.0"; int fvl = 7;
+    int l = 0;
+    for (int i = 0; i < 128; i++)
+        if ('\n' == buf[i]) {
+            l = i;//-fvl;
+            //if (! (l >= 0 && 0 == memcmp (buf+l, fv, fvl))) return;
+            //else break;
+        }
+    if (l < 8) { printf ("not a nif file" EOL); return; }
+
     FFD_NS::FFDNode * tree = ffd.File2Tree (data_stream);
     FFD_ENSURE(nullptr != tree, "parse_nif(): File2Tree() returned null?!")
     // tree->PrintTree ();
