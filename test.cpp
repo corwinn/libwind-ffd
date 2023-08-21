@@ -294,17 +294,20 @@ void parse_nif(FFD_NS::FFD & ffd, const char * n)
     FFD_STREAM data_stream {n};
 #endif
     // filter by version
-    byte buf[128] {};
-    data_stream.Read (buf, 128).Reset ();
-    //const char * fv = "4.2.1.0"; int fvl = 7;
-    int l = 0;
-    for (int i = 0; i < 128; i++)
+    int const BUF_SIZE{64}; byte buf[BUF_SIZE] {};
+    data_stream.Read (buf, BUF_SIZE).Reset ();
+    const char * fv = "20.2.0.7"; int fvl = 8;
+    for (int i = 0; i < BUF_SIZE; i++)
         if ('\n' == buf[i]) {
-            l = i;//-fvl;
-            //if (! (l >= 0 && 0 == memcmp (buf+l, fv, fvl))) return;
-            //else break;
+            int l = i-fvl;
+            if (l < 0) { printf ("(not a nif file)"); return; }
+            if (! (0 == memcmp (buf+l, fv, fvl))) return;
+            break;
         }
-    if (l < 8) { printf ("not a nif file" EOL); return; }
+        else if (buf[i] < 32 || buf[i] > 127) {
+            printf ("(not a nif file)");
+            return;
+        }
 
     FFD_NS::FFDNode * tree = ffd.File2Tree (data_stream);
     FFD_ENSURE(nullptr != tree, "parse_nif(): File2Tree() returned null?!")
