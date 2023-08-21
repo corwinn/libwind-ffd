@@ -32,6 +32,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 **** END LICENCE BLOCK ****/
 
+//TODO sanity check: circular dependency
+//TODO sanity check: unresolvable DType (Expr.Count () <= 0)
+
 #ifndef _FFD_H_
 #define _FFD_H_
 
