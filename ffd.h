@@ -533,7 +533,10 @@ class FFD_EXPORT FFD
                     this->PrintExpr (this->Expr);
                     Dbg << EOL;
                     for (auto i : this->EnumItems) { //TODO implicit numbering?!
-                        Dbg << "    " << i.Name << " " << i.Value << EOL;
+                        Dbg << "    " << i.Name << " ";
+                        if (this->DType->Signed) Dbg << i.Value;
+                        else Dbg << static_cast<unsigned int>(i.Value);
+                        Dbg << EOL;
                         this->PrintExpr (i.Expr);
                     }
                     break;
