@@ -499,14 +499,17 @@ class FFD_EXPORT FFD
                 case FFD::SType::Struct:
                     Dbg << "struct " << this->Name;
                     // PSDbgPrint ();
-                    PrintPS ([](PSParam & p) {Dbg << p.Name;});
+                    this->PrintPS ([](PSParam & p) {Dbg << p.Name;});
                     Dbg << EOL;
                     for (auto n : this->Fields) if (n) n->PrintIfUsed ();
                     break;
                 case FFD::SType::Field:
                     FFD_ENSURE(this->Base != nullptr, "Field with no Base")
                     Dbg << "    ";
-                    if (Composite) Dbg << this->DTypeName;
+                    if (Composite) {
+                        Dbg << this->DTypeName;
+                        this->PrintPS ([](PSParam & p) {Dbg << p.Name;});
+                    }
                     else if (Variadic) Dbg << "..."; // TODO key(s)
                     else if (DType) {
                         bool ps_type{};
@@ -517,7 +520,7 @@ class FFD_EXPORT FFD
                                     Dbg << this->DTypeName;
                                 }
                         if (! ps_type) Dbg << this->DType->Name;
-                        PrintPS ([](PSParam & p) {Dbg << p.Name;});
+                        this->PrintPS ([](PSParam & p) {Dbg << p.Name;});
                     }
                     else Dbg << "TODO: " << this->DTypeName;
                     if (! Composite) Dbg << " " << this->Name;
